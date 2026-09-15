@@ -1,0 +1,13 @@
+name: kansasii_mic
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pandas
+  - numpy
+  - scipy
+  - matplotlib
+  - pytest
+  - pip
+  - pip:
+      - -e .
