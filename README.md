@@ -101,15 +101,6 @@ their absence) for low-n antibiotics with caution; check
 `n_antibiotics_tested`-style counts in the per-antibiotic figures/titles
 before drawing conclusions.
 
-## Why Python, not Rust
-
-This host has no `cargo`/`rustc` and `crates.io` is unreachable through
-its network proxy; there's also no Rust environment module. The sibling
-`immensekansasii` project already standardizes on Python (+R) with a conda
-`environment.yml`, and `miniforge3` (with working conda-forge access) is
-available as a module here. Given the work is string-parsing /
-statistics / plotting heavy, Python was the appropriate choice for this
-environment.
 
 ## Running
 
