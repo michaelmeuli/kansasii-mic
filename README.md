@@ -19,7 +19,21 @@ and overall, with results checked against CLSI reference breakpoints for
   marks reference/control-strain rows (`LABEL`), including
   `M. kansasii (ATCC 12478)`. That control row has no `TNR`/MIC data of
   its own in this export, so it cannot serve as an in-dataset QC
-  comparison -- see "Reference values" below.
+  comparison -- see "Reference values" below. Its `MHK` column is a
+  second, unrelated `TNR`-like id: for isolates that had their broth
+  microdilution (MHK) test run under a different lab number than their
+  primary `TNR`, that number is recorded there instead of in the `TNR`
+  column.
+
+**Joining the two files** (`src/kansasii_mic/loading.py`): a `mic.csv` row
+is kept only if its `TNR` matches screening_map's `TNR` column or, failing
+that, its `MHK` column -- screening_map defines which isolates are in
+scope, so rows matching neither are dropped. On an `MHK`-column match, the
+row's `TNR` is replaced with screening_map's canonical `TNR` for that
+isolate. The resulting long-format table carries `NR`, `PROBENNUMMER`,
+`TNR` and `MHK` from screening_map alongside the parsed MIC fields;
+figures are labeled by `PROBENNUMMER` (a string), while `NR`/`TNR`/`MHK`
+are nullable integers.
 
 ## Data-quality handling
 
@@ -119,8 +133,9 @@ python scripts/run_analysis.py \
 
 ## Outputs (`output/mic/`)
 
-- `mic_parsed.csv` -- cleaned long-format MIC data (one row per TNR x
-  antibiotic) used for the analysis.
+- `mic_parsed.csv` -- cleaned long-format MIC data (one row per isolate x
+  antibiotic, with `NR`/`PROBENNUMMER`/`TNR`/`MHK` from screening_map)
+  used for the analysis.
 - `excluded_qc.csv` -- rows dropped as flat-profile data-quality artifacts.
 - `parse_failures.csv` -- written only if any `MHK` value could not be
   parsed at all.

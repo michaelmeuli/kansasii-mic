@@ -38,7 +38,7 @@ def _safe_filename(name: str) -> str:
 
 
 def plot_antibiotic_distributions(outliers_df: pd.DataFrame, out_dir: Path) -> list[Path]:
-    """One strip plot per antibiotic: log2 MIC across TNRs, CLSI lines, outliers labeled."""
+    """One strip plot per antibiotic: log2 MIC across isolates, CLSI lines, outliers labeled by PROBENNUMMER."""
     out_dir.mkdir(parents=True, exist_ok=True)
     paths = []
     for antibiotic, group in outliers_df.groupby("antibiotic"):
@@ -65,7 +65,7 @@ def plot_antibiotic_distributions(outliers_df: pd.DataFrame, out_dir: Path) -> l
 
         for _, row in group[group["outlier_direction"].notna()].iterrows():
             y = jitter[group.index.get_loc(row.name)]
-            ax.annotate(str(row["TNR"]), (row["log2_mic"], y), textcoords="offset points", xytext=(4, 4), fontsize=7, color="#333333")
+            ax.annotate(str(row["PROBENNUMMER"]), (row["log2_mic"], y), textcoords="offset points", xytext=(4, 4), fontsize=7, color="#333333")
 
         ax.set_yticks([])
         ax.set_ylim(-0.5, 0.5)
@@ -93,9 +93,9 @@ def _fmt_mic(log2_value: float) -> str:
 
 def plot_heatmap(outliers_df: pd.DataFrame, ranking_df: pd.DataFrame, out_dir: Path) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
-    pivot = outliers_df.pivot_table(index="TNR", columns="antibiotic", values="log2_mic", aggfunc="mean")
-    tnr_order = [t for t in ranking_df["TNR"] if t in pivot.index]
-    pivot = pivot.loc[tnr_order]
+    pivot = outliers_df.pivot_table(index="PROBENNUMMER", columns="antibiotic", values="log2_mic", aggfunc="mean")
+    isolate_order = [p for p in ranking_df["PROBENNUMMER"] if p in pivot.index]
+    pivot = pivot.loc[isolate_order]
 
     fig, ax = plt.subplots(figsize=(max(6, 0.45 * pivot.shape[1]), max(5, 0.22 * pivot.shape[0])))
     masked = np.ma.masked_invalid(pivot.values)
@@ -106,7 +106,7 @@ def plot_heatmap(outliers_df: pd.DataFrame, ranking_df: pd.DataFrame, out_dir: P
     ax.set_xticklabels(pivot.columns, rotation=45, ha="right", fontsize=8)
     ax.set_yticks(range(pivot.shape[0]))
     ax.set_yticklabels(pivot.index, fontsize=6)
-    ax.set_title("MIC (log2 mg/L) by isolate (TNR) x antibiotic\nrows sorted from most- to least-resistant overall")
+    ax.set_title("MIC (log2 mg/L) by isolate (PROBENNUMMER) x antibiotic\nrows sorted from most- to least-resistant overall")
     cbar = fig.colorbar(im, ax=ax, shrink=0.6)
     cbar.set_label("log2 MIC (mg/L)")
     fig.tight_layout()
@@ -125,7 +125,7 @@ def plot_resistance_ranking(ranking_df: pd.DataFrame, out_dir: Path, top_n: int 
 
     fig, ax = plt.subplots(figsize=(7, max(4, 0.32 * len(combined))))
     colors = [OUTLIER_RESISTANT_COLOR if v > 0 else OUTLIER_SUSCEPTIBLE_COLOR for v in combined["mean_robust_z"]]
-    ax.barh(combined["TNR"].astype(str), combined["mean_robust_z"], color=colors)
+    ax.barh(combined["PROBENNUMMER"].astype(str), combined["mean_robust_z"], color=colors)
     ax.axvline(0, color="#444444", linewidth=0.8)
     ax.set_xlabel("Mean robust z-score across tested antibiotics\n(> 0 = more resistant than cohort, < 0 = more susceptible)")
     ax.set_title(f"Most resistant / most susceptible isolates (top {top_n} each)")

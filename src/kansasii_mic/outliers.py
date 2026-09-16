@@ -36,6 +36,7 @@ def per_antibiotic_outliers(clean_df: pd.DataFrame) -> pd.DataFrame:
             results.append(
                 {
                     "TNR": row.TNR,
+                    "PROBENNUMMER": row.PROBENNUMMER,
                     "antibiotic": antibiotic,
                     "mhk_raw": row.mhk_raw,
                     "point_estimate": row.point_estimate,
@@ -61,6 +62,7 @@ def tnr_resistance_ranking(outliers_df: pd.DataFrame) -> pd.DataFrame:
     def _agg(group: pd.DataFrame) -> pd.Series:
         return pd.Series(
             {
+                "PROBENNUMMER": group["PROBENNUMMER"].iloc[0],
                 "n_antibiotics_tested": len(group),
                 "mean_robust_z": group["robust_z"].mean(skipna=True),
                 "n_clsi_resistant": (group["clsi_category"] == "R").sum(),
