@@ -41,8 +41,8 @@ class Breakpoint:
 
 
 CLSI_KANSASII_BREAKPOINTS: dict[str, Breakpoint] = {
-    "Rifampicin": Breakpoint(susceptible_max=1, resistant_min=2),
     "Clarithromycin": Breakpoint(susceptible_max=8, resistant_min=32),
+    "Rifampicin": Breakpoint(susceptible_max=1, resistant_min=2),
     "Amikacin": Breakpoint(susceptible_max=16, resistant_min=64),
     "Ciprofloxacin": Breakpoint(susceptible_max=1, resistant_min=4),
     "Doxycyclin": Breakpoint(susceptible_max=1, resistant_min=8),
@@ -54,14 +54,6 @@ CLSI_KANSASII_BREAKPOINTS: dict[str, Breakpoint] = {
     # parsing.parse_mic reports the point estimate for combo values.
     "Sulfamethoxazole/Trimethoprim": Breakpoint(susceptible_max=2, resistant_min=4),
 }
-
-# Reference strain context (not used as a numeric breakpoint, kept for
-# documentation / provenance in reports).
-QC_STRAIN_LABEL = "M. kansasii (ATCC 12478)"
-QC_STRAIN_SOURCE = (
-    "CLSI M24/M62 quality-control strain for Sensititre SLOMYCO broth "
-    "microdilution panels; no in-dataset MIC results available for it."
-)
 
 
 def categorize(antibiotic: str, point_estimate: float) -> str | None:
