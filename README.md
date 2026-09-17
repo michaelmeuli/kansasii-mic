@@ -133,6 +133,12 @@ python scripts/run_analysis.py \
 
 ## Outputs (`output/mic/`)
 
+The pipeline runs twice and writes two parallel output trees under
+`--out-dir`: `mhk/` for the broth-microdilution MHK panel rows, and
+`mgit/` for the fixed-concentration MGIT breakpoint rows (`ANTIBIOTIKA`
+labels like `"Amikacin 4 mg/l"`). Both share the same screening_map
+TNR/MHK matching and produce identical file layouts:
+
 - `mic_parsed.csv` -- cleaned long-format MIC data (one row per isolate x
   antibiotic, with `NR`/`PROBENNUMMER`/`TNR`/`MHK` from screening_map)
   used for the analysis.
