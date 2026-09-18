@@ -16,6 +16,7 @@ uv venv .venv --python 3.14
 uv pip install --python .venv/Scripts/python.exe pandas numpy scipy matplotlib pytest -e .
 
 scp -r "A:\projects\kansasii\input\*" mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/data/imm/
+scp -r "A:\projects\kansasii\protocols\*" mimeul@cluster.s3it.uzh.ch:/shares/sander.imm.uzh/MM/kansasii/data/protocols/
 
 
 
