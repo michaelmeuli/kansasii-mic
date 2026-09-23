@@ -81,7 +81,7 @@ def _match_screening_map_and_parse(
 
     Returns (parsed_long_df, parse_failures_df). parsed_long_df columns:
     NR, PROBENNUMMER, TNR, MHK, raw_antibiotic, antibiotic, mhk_raw,
-    point_estimate, log2_mic, denominator, censored, is_range,
+    mhk_parsed, point_estimate, log2_mic, denominator, censored, is_range,
     repaired_from, int_erg, erg, label.
     """
     rows = []
@@ -106,6 +106,7 @@ def _match_screening_map_and_parse(
                 "raw_antibiotic": row.ANTIBIOTIKA,
                 "antibiotic": canonical,
                 "mhk_raw": row.MHK,
+                "mhk_parsed": parsed.text,
                 "point_estimate": parsed.point_estimate,
                 "log2_mic": parsed.log2,
                 "denominator": parsed.denominator,

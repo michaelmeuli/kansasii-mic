@@ -41,6 +41,7 @@ class MicParseError(ValueError):
 @dataclass(frozen=True)
 class ParsedMic:
     raw: str
+    text: str  # stripped (and typo-repaired) string that was actually parsed
     point_estimate: float  # numerator component, on the original mg/L scale
     denominator: float | None  # SMX/TMP ratio partner, if a combo value
     low: float
@@ -89,6 +90,7 @@ def parse_mic(raw: str) -> ParsedMic:
         censored = "left" if direction in ("<", "<=") else "right"
         return ParsedMic(
             raw=raw,
+            text=text,
             point_estimate=value,
             denominator=float(denom) if denom else None,
             low=value,
@@ -109,6 +111,7 @@ def parse_mic(raw: str) -> ParsedMic:
             denom = math.sqrt(float(low_denom) * float(high_denom))
         return ParsedMic(
             raw=raw,
+            text=text,
             point_estimate=point,
             denominator=denom,
             low=low,
@@ -124,6 +127,7 @@ def parse_mic(raw: str) -> ParsedMic:
         value = float(num)
         return ParsedMic(
             raw=raw,
+            text=text,
             point_estimate=value,
             denominator=float(denom) if denom else None,
             low=value,
