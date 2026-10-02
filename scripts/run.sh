@@ -23,13 +23,13 @@ scp -r "A:\projects\kansasii\protocols\*" mimeul@cluster.s3it.uzh.ch:/shares/san
 
 .venv\Scripts\python.exe scripts\run_analysis.py `
   --mic-csv "A:\projects\kansasii\input\mic.csv" `
-  --screening-map "A:\projects\kansasii\input\screening_map.csv" `
+  --screening-map "A:\projects\kansasii\input\screening_map_link.csv" `
   --out-dir "A:\projects\kansasii\downloads\mic"
 
 
 .venv\Scripts\Activate.ps1
 python scripts\run_analysis.py `
   --mic-csv "A:\projects\kansasii\input\mic.csv" `
-  --screening-map "A:\projects\kansasii\input\screening_map.csv" `
+  --screening-map "A:\projects\kansasii\input\screening_map_link.csv" `
   --out-dir "A:\projects\kansasii\downloads\mic"
 

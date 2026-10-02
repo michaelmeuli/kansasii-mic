@@ -87,7 +87,7 @@ def _run_mgit_pipeline(mgit_long_df, mgit_failures_df, out_dir: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mic-csv", type=Path, required=True)
-    parser.add_argument("--screening-map", type=Path, required=True)
+    parser.add_argument("--screening-map", type=Path, required=True, help="screening_map_link.csv")
     parser.add_argument("--out-dir", type=Path, required=True)
     args = parser.parse_args()
 

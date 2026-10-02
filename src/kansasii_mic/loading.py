@@ -1,4 +1,4 @@
-"""Load and normalize the mic.csv / screening_map.csv export."""
+"""Load and normalize the mic.csv / screening_map_link.csv export."""
 
 from __future__ import annotations
 
@@ -56,9 +56,9 @@ def _lookup_screening_map(
 ) -> pd.Series | None:
     """Match a mic.csv TNR to its screening_map metadata row, or None if out of scope.
 
-    screening_map.csv is the source of truth for which isolates are in
-    scope: a row is kept only if its TNR matches screening_map's TNR
-    column, or -- for a TNR recorded there as a superseded/duplicate id --
+    screening_map_link.csv is the source of truth for which isolates are in
+    scope: a row is kept only if its TNR matches any of screening_map's TNR
+    columns (TNR, TNR_NGS, TNR3-6), or -- for a TNR recorded there as a superseded/duplicate id --
     screening_map's MHK column. On an MHK-column match, the row's TNR is
     replaced by screening_map's canonical TNR for that isolate (the
     returned Series' ``TNR`` field).
@@ -170,15 +170,41 @@ def _match_screening_map_mgit(
     return long_df, failures_df
 
 
+# Every screening_map_link.csv column holding a TNR of the row's isolate:
+# TNR is the primary one, the others are further samples of the same isolate.
+SCREENING_MAP_TNR_COLUMNS = ("TNR", "TNR_NGS", "TNR3", "TNR4", "TNR5", "TNR6")
+
+
 def _load_smap_indexes(screening_map_csv: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
-    smap = pd.read_csv(
-        screening_map_csv,
-        dtype={"NR": "Int64", "PROBENNUMMER": "string", "TNR": "Int64", "MHK": "Int64"},
-    )
+    """Build (by_tnr, by_mhk) lookups from screening_map_link.csv (or the old screening_map.csv).
+
+    ``by_tnr`` is keyed by every TNR column present; the returned ``TNR``
+    field is always the row's primary TNR. On a clash the primary TNR column
+    wins over secondary ones, then file order.
+    """
+    smap = pd.read_csv(screening_map_csv, dtype="string")
+    for col in ("NR", "TNR", "MHK", *SCREENING_MAP_TNR_COLUMNS):
+        if col in smap:
+            smap[col] = pd.to_numeric(smap[col], errors="coerce").astype("Int64")
     smap_cols = ["NR", "PROBENNUMMER", "TNR", "MHK", "LABEL"]
-    smap_by_tnr = (
-        smap.dropna(subset=["TNR"]).drop_duplicates(subset="TNR", keep="first").set_index("TNR", drop=False)[smap_cols]
-    )
+    for col in smap_cols:
+        if col not in smap:
+            smap[col] = pd.NA
+
+    parts = []
+    for col in SCREENING_MAP_TNR_COLUMNS:
+        if col not in smap:
+            continue
+        part = smap.dropna(subset=[col])[smap_cols].copy()
+        part["_key"] = smap.loc[part.index, col]
+        parts.append(part)
+    by_tnr_all = pd.concat(parts)
+    clash = by_tnr_all.drop_duplicates(subset=["_key", "NR"]).duplicated(subset="_key", keep=False)
+    if clash.any():
+        keys = sorted(by_tnr_all.drop_duplicates(subset=["_key", "NR"])["_key"][clash.values].unique())
+        print(f"WARNING: TNR(s) shared by different isolates in {screening_map_csv.name}: {keys}")
+    smap_by_tnr = by_tnr_all.drop_duplicates(subset="_key", keep="first").set_index("_key")
+    smap_by_tnr.index.name = None
     smap_by_mhk = (
         smap.dropna(subset=["MHK"]).drop_duplicates(subset="MHK", keep="first").set_index("MHK", drop=False)[smap_cols]
     )

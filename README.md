@@ -15,7 +15,7 @@ and overall, with results checked against CLSI reference breakpoints for
   a fixed test concentration (e.g. `"Amikacin 4 mg/l"`) are single-point
   breakpoint tests and never carry an `MHK` value -- **this analysis only
   uses rows with a non-empty `MHK`**, per the intended scope.
-- `data/imm/screening_map.csv` -- links `TNR` to sample/sequencing IDs and
+- `data/imm/screening_map_link.csv` (supersedes `screening_map.csv`; built by `immensekansasii/scripts/screening_map_link.py`) -- links `TNR` to sample/sequencing IDs and
   marks reference/control-strain rows (`LABEL`), including
   `M. kansasii (ATCC 12478)`. That control row has no `TNR`/MIC data of
   its own in this export, so it cannot serve as an in-dataset QC
@@ -26,8 +26,8 @@ and overall, with results checked against CLSI reference breakpoints for
   column.
 
 **Joining the two files** (`src/kansasii_mic/loading.py`): a `mic.csv` row
-is kept only if its `TNR` matches screening_map's `TNR` column or, failing
-that, its `MHK` column -- screening_map defines which isolates are in
+is kept only if its `TNR` matches any of screening_map_link's TNR columns
+(`TNR`, `TNR_NGS`, `TNR3`-`TNR6`) or, failing that, its `MHK` column -- screening_map defines which isolates are in
 scope, so rows matching neither are dropped. On an `MHK`-column match, the
 row's `TNR` is replaced with screening_map's canonical `TNR` for that
 isolate. The resulting long-format table carries `NR`, `PROBENNUMMER`,
@@ -127,7 +127,7 @@ pytest tests/
 
 python scripts/run_analysis.py \
   --mic-csv /shares/sander.imm.uzh/MM/kansasii/data/imm/mic.csv \
-  --screening-map /shares/sander.imm.uzh/MM/kansasii/data/imm/screening_map.csv \
+  --screening-map /shares/sander.imm.uzh/MM/kansasii/data/imm/screening_map_link.csv \
   --out-dir /shares/sander.imm.uzh/MM/kansasii/output/mic
 ```
 

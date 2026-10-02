@@ -3,7 +3,7 @@
 *M. kansasii* ATCC 12478 is the CLSI-designated quality-control strain used
 with the Sensititre SLOMYCO broth microdilution panels (this dataset's
 source), primarily to validate rifampin MIC testing. ATCC 12478 has no MIC
-results of its own in this dataset's ``screening_map.csv`` (it appears only
+results of its own in this dataset's ``screening_map_link.csv`` (it appears only
 as an unlinked control-row placeholder), so these are literature/CLSI values
 rather than an in-dataset control run.
 
