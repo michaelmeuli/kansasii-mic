@@ -42,6 +42,7 @@ def tnr_mgit_resistance_ranking(mgit_long_df: pd.DataFrame) -> pd.DataFrame:
         counts = group["erg"].value_counts()
         return pd.Series(
             {
+                "NR": group["NR"].iloc[0],
                 "PROBENNUMMER": group["PROBENNUMMER"].iloc[0],
                 "n_tests": len(group),
                 **{f"n_{cat}": int(counts.get(cat, 0)) for cat in ERG_CATEGORIES},

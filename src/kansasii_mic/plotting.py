@@ -22,7 +22,7 @@ BREAKPOINT_S_COLOR = "#2E7D32"
 BREAKPOINT_R_COLOR = "#B71C1C"
 HEATMAP_CMAP = "YlOrRd"
 # Iglewicz-Hoaglin cutoff: |modified_z| above this is labeled on the distribution plots.
-LABEL_Z_THRESHOLD = 3.5
+LABEL_Z_THRESHOLD = 3.0
 
 # S/I/R/K/U category colors for the MGIT breakpoint figures.
 ERG_COLORS = {
@@ -106,8 +106,8 @@ def _fmt_mic(log2_value: float) -> str:
 
 def plot_heatmap(outliers_df: pd.DataFrame, ranking_df: pd.DataFrame, out_dir: Path) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
-    pivot = outliers_df.pivot_table(index="PROBENNUMMER", columns="antibiotic", values="log2_mic", aggfunc="mean")
-    isolate_order = [p for p in ranking_df["PROBENNUMMER"] if p in pivot.index]
+    pivot = outliers_df.pivot_table(index="NR", columns="antibiotic", values="log2_mic", aggfunc="mean")
+    isolate_order = [p for p in ranking_df["NR"] if p in pivot.index]
     pivot = pivot.loc[isolate_order]
 
     fig, ax = plt.subplots(figsize=(max(6, 0.45 * pivot.shape[1]), max(5, 0.22 * pivot.shape[0])))
@@ -119,7 +119,7 @@ def plot_heatmap(outliers_df: pd.DataFrame, ranking_df: pd.DataFrame, out_dir: P
     ax.set_xticklabels(pivot.columns, rotation=45, ha="right", fontsize=8)
     ax.set_yticks(range(pivot.shape[0]))
     ax.set_yticklabels(pivot.index, fontsize=6)
-    ax.set_title("MIC (log2 mg/L) by isolate (PROBENNUMMER) x antibiotic\nrows sorted from most- to least-resistant overall")
+    ax.set_title("MIC (log2 mg/L) by isolate (NR) x antibiotic\nrows sorted from most- to least-resistant overall")
     cbar = fig.colorbar(im, ax=ax, shrink=0.6)
     cbar.set_label("log2 MIC (mg/L)")
     fig.tight_layout()
@@ -138,7 +138,7 @@ def plot_resistance_ranking(ranking_df: pd.DataFrame, out_dir: Path, top_n: int 
 
     fig, ax = plt.subplots(figsize=(7, max(4, 0.32 * len(combined))))
     colors = [OUTLIER_RESISTANT_COLOR if v > 0 else OUTLIER_SUSCEPTIBLE_COLOR for v in combined["mean_modified_z"]]
-    ax.barh(combined["PROBENNUMMER"].astype(str), combined["mean_modified_z"], color=colors)
+    ax.barh(combined["NR"].astype(int).astype(str), combined["mean_modified_z"], color=colors)
     ax.axvline(0, color="#444444", linewidth=0.8)
     ax.set_xlabel("Mean modified z-score across tested antibiotics\n(> 0 = more resistant than cohort, < 0 = more susceptible)")
     ax.set_title(f"Most resistant / most susceptible isolates (top {top_n} each)")
@@ -182,8 +182,8 @@ def plot_mgit_heatmap(mgit_long_df: pd.DataFrame, ranking_df: pd.DataFrame, out_
     df["column"] = df["antibiotic"] + " " + df["concentration_mg_l"].map(lambda v: f"{v:g}") + " mg/l"
     erg_code = {cat: i for i, cat in enumerate(ERG_CATEGORIES)}
     df["erg_code"] = df["erg"].map(erg_code)
-    pivot = df.pivot_table(index="PROBENNUMMER", columns="column", values="erg_code", aggfunc="mean")
-    isolate_order = [p for p in ranking_df["PROBENNUMMER"] if p in pivot.index]
+    pivot = df.pivot_table(index="NR", columns="column", values="erg_code", aggfunc="mean")
+    isolate_order = [p for p in ranking_df["NR"] if p in pivot.index]
     pivot = pivot.loc[isolate_order]
 
     fig, ax = plt.subplots(figsize=(max(6, 0.45 * pivot.shape[1]), max(5, 0.22 * pivot.shape[0])))
@@ -196,7 +196,7 @@ def plot_mgit_heatmap(mgit_long_df: pd.DataFrame, ranking_df: pd.DataFrame, out_
     ax.set_yticks(range(pivot.shape[0]))
     ax.set_yticklabels(pivot.index, fontsize=6)
     ax.set_title(
-        "MGIT breakpoint result by isolate (PROBENNUMMER) x antibiotic@concentration\n"
+        "MGIT breakpoint result by isolate (NR) x antibiotic@concentration\n"
         "rows sorted from most- to least-resistant overall"
     )
     cbar = fig.colorbar(im, ax=ax, ticks=range(len(ERG_CATEGORIES)), shrink=0.6)
@@ -217,7 +217,7 @@ def plot_mgit_resistance_ranking(ranking_df: pd.DataFrame, out_dir: Path, top_n:
     combined = pd.concat([top, bottom]).drop_duplicates(subset="TNR").sort_values("n_R")
 
     fig, ax = plt.subplots(figsize=(7, max(4, 0.32 * len(combined))))
-    ax.barh(combined["PROBENNUMMER"].astype(str), combined["n_R"], color=BREAKPOINT_R_COLOR)
+    ax.barh(combined["NR"].astype(int).astype(str), combined["n_R"], color=BREAKPOINT_R_COLOR)
     ax.set_xlabel("Number of R (resistant) MGIT breakpoint calls")
     ax.set_title(f"Most MGIT-resistant isolates by R-call count (top {top_n})")
     fig.tight_layout()

@@ -65,6 +65,7 @@ def tnr_resistance_ranking(outliers_df: pd.DataFrame) -> pd.DataFrame:
     def _agg(group: pd.DataFrame) -> pd.Series:
         return pd.Series(
             {
+                "NR": group["NR"].iloc[0],
                 "PROBENNUMMER": group["PROBENNUMMER"].iloc[0],
                 "n_antibiotics_tested": len(group),
                 "mean_modified_z": group["modified_z"].mean(skipna=True),
