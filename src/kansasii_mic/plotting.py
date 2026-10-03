@@ -21,6 +21,8 @@ OUTLIER_SUSCEPTIBLE_COLOR = "#1E8449"
 BREAKPOINT_S_COLOR = "#2E7D32"
 BREAKPOINT_R_COLOR = "#B71C1C"
 HEATMAP_CMAP = "YlOrRd"
+# Iglewicz-Hoaglin cutoff: |modified_z| above this is labeled on the distribution plots.
+LABEL_Z_THRESHOLD = 3.5
 
 # S/I/R/K/U category colors for the MGIT breakpoint figures.
 ERG_COLORS = {
@@ -49,7 +51,7 @@ def _safe_filename(name: str) -> str:
 
 
 def plot_antibiotic_distributions(outliers_df: pd.DataFrame, out_dir: Path) -> list[Path]:
-    """One strip plot per antibiotic: log2 MIC across isolates, CLSI lines, outliers labeled by PROBENNUMMER."""
+    """One strip plot per antibiotic: log2 MIC across isolates, CLSI lines, points with |modified_z| > LABEL_Z_THRESHOLD labeled by NR."""
     out_dir.mkdir(parents=True, exist_ok=True)
     paths = []
     for antibiotic, group in outliers_df.groupby("antibiotic"):
@@ -74,9 +76,9 @@ def plot_antibiotic_distributions(outliers_df: pd.DataFrame, out_dir: Path) -> l
             if bp.resistant_min is not None:
                 ax.axvline(np.log2(bp.resistant_min), color=BREAKPOINT_R_COLOR, linestyle="--", linewidth=1.2, label=f"CLSI R ≥ {bp.resistant_min}")
 
-        for _, row in group[group["outlier_direction"].notna()].iterrows():
+        for _, row in group[group["modified_z"].abs() > LABEL_Z_THRESHOLD].iterrows():
             y = jitter[group.index.get_loc(row.name)]
-            ax.annotate(str(row["PROBENNUMMER"]), (row["log2_mic"], y), textcoords="offset points", xytext=(4, 4), fontsize=7, color="#333333")
+            ax.annotate(str(int(row["NR"])), (row["log2_mic"], y), textcoords="offset points", xytext=(4, 4), fontsize=7, color="#333333")
 
         ax.set_yticks([])
         ax.set_ylim(-0.5, 0.5)
@@ -129,16 +131,16 @@ def plot_heatmap(outliers_df: pd.DataFrame, ranking_df: pd.DataFrame, out_dir: P
 
 def plot_resistance_ranking(ranking_df: pd.DataFrame, out_dir: Path, top_n: int = 15) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
-    ranked = ranking_df.dropna(subset=["mean_robust_z"]).sort_values("mean_robust_z", ascending=False)
+    ranked = ranking_df.dropna(subset=["mean_modified_z"]).sort_values("mean_modified_z", ascending=False)
     top = ranked.head(top_n)
     bottom = ranked.tail(top_n)
-    combined = pd.concat([top, bottom]).drop_duplicates(subset="TNR").sort_values("mean_robust_z")
+    combined = pd.concat([top, bottom]).drop_duplicates(subset="TNR").sort_values("mean_modified_z")
 
     fig, ax = plt.subplots(figsize=(7, max(4, 0.32 * len(combined))))
-    colors = [OUTLIER_RESISTANT_COLOR if v > 0 else OUTLIER_SUSCEPTIBLE_COLOR for v in combined["mean_robust_z"]]
-    ax.barh(combined["PROBENNUMMER"].astype(str), combined["mean_robust_z"], color=colors)
+    colors = [OUTLIER_RESISTANT_COLOR if v > 0 else OUTLIER_SUSCEPTIBLE_COLOR for v in combined["mean_modified_z"]]
+    ax.barh(combined["PROBENNUMMER"].astype(str), combined["mean_modified_z"], color=colors)
     ax.axvline(0, color="#444444", linewidth=0.8)
-    ax.set_xlabel("Mean robust z-score across tested antibiotics\n(> 0 = more resistant than cohort, < 0 = more susceptible)")
+    ax.set_xlabel("Mean modified z-score across tested antibiotics\n(> 0 = more resistant than cohort, < 0 = more susceptible)")
     ax.set_title(f"Most resistant / most susceptible isolates (top {top_n} each)")
     fig.tight_layout()
     path = out_dir / "resistance_ranking.png"

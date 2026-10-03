@@ -103,8 +103,8 @@ consistent with this dataset's own `INT_ERG`/`ERG` marking those drugs
   the rest of the cohort. Robust to the small, skewed, discrete-dilution
   data here. Each row also carries the CLSI category (if defined) for
   cross-reference.
-- **Per isolate, aggregated** (`tnr_resistance_ranking.csv`): mean robust
-  z-score `(log2 MIC - median) / MAD` across all antibiotics that `TNR`
+- **Per isolate, aggregated** (`tnr_resistance_ranking.csv`): mean modified
+  z-score `(log2 MIC - median) / (1.2533 x mean absolute deviation)` across all antibiotics that `TNR`
   was tested for, plus counts of CLSI-resistant results -- used to rank
   overall "most resistant" / "most susceptible" isolates.
 

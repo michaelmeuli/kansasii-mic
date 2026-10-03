@@ -2,7 +2,7 @@
 
 Unlike the MHK broth-microdilution panel, MGIT rows report a single
 categorical growth call (ERG: S/I/R/K/U) at one fixed tested concentration
-per antibiotic, not a continuous MIC value. The Tukey-fence/robust-z
+per antibiotic, not a continuous MIC value. The Tukey-fence/modified-z
 outlier statistics in :mod:`kansasii_mic.outliers` are built for continuous
 log2 MIC values and don't have a clean meaning here, so this module builds
 counts and rankings directly off the categorical calls instead.

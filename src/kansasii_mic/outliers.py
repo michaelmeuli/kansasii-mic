@@ -7,7 +7,7 @@ import pandas as pd
 
 from .breakpoints import categorize
 
-MAD_SCALE = 1.4826  # consistency constant so MAD approximates SD for normal data
+MEANAD_SCALE = 1.253314  # consistency constant so mean absolute deviation approximates SD for normal data
 
 
 def _tukey_fences(values: pd.Series) -> tuple[float, float, float, float]:
@@ -25,16 +25,19 @@ def per_antibiotic_outliers(clean_df: pd.DataFrame) -> pd.DataFrame:
     for antibiotic, group in clean_df.groupby("antibiotic"):
         q1, q3, lower_fence, upper_fence = _tukey_fences(group["log2_mic"])
         median = group["log2_mic"].median()
-        mad = (group["log2_mic"] - median).abs().median() * MAD_SCALE
+        # Mean (not median) absolute deviation: MIC data is discrete and often
+        # >50% tied at the median, which makes MAD 0 and the z-score undefined.
+        scale = (group["log2_mic"] - median).abs().mean() * MEANAD_SCALE
         for row in group.itertuples(index=False):
             direction = None
             if row.log2_mic < lower_fence:
                 direction = "more_susceptible"
             elif row.log2_mic > upper_fence:
                 direction = "more_resistant"
-            robust_z = (row.log2_mic - median) / mad if mad > 0 else np.nan
+            modified_z = (row.log2_mic - median) / scale if scale > 0 else np.nan
             results.append(
                 {
+                    "NR": row.NR,
                     "TNR": row.TNR,
                     "PROBENNUMMER": row.PROBENNUMMER,
                     "antibiotic": antibiotic,
@@ -42,7 +45,7 @@ def per_antibiotic_outliers(clean_df: pd.DataFrame) -> pd.DataFrame:
                     "point_estimate": row.point_estimate,
                     "log2_mic": row.log2_mic,
                     "cohort_median_log2": median,
-                    "robust_z": robust_z,
+                    "modified_z": modified_z,
                     "tukey_lower_fence": lower_fence,
                     "tukey_upper_fence": upper_fence,
                     "outlier_direction": direction,
@@ -56,7 +59,7 @@ def per_antibiotic_outliers(clean_df: pd.DataFrame) -> pd.DataFrame:
 def tnr_resistance_ranking(outliers_df: pd.DataFrame) -> pd.DataFrame:
     """Aggregate per-TNR score across all antibiotics that TNR was tested for.
 
-    score = mean robust z-score across drugs (higher = more resistant
+    score = mean modified z-score across drugs (higher = more resistant
     overall), plus a count of CLSI-defined resistant (R) results.
     """
     def _agg(group: pd.DataFrame) -> pd.Series:
@@ -64,7 +67,7 @@ def tnr_resistance_ranking(outliers_df: pd.DataFrame) -> pd.DataFrame:
             {
                 "PROBENNUMMER": group["PROBENNUMMER"].iloc[0],
                 "n_antibiotics_tested": len(group),
-                "mean_robust_z": group["robust_z"].mean(skipna=True),
+                "mean_modified_z": group["modified_z"].mean(skipna=True),
                 "n_clsi_resistant": (group["clsi_category"] == "R").sum(),
                 "n_clsi_susceptible": (group["clsi_category"] == "S").sum(),
                 "n_outlier_more_resistant": (group["outlier_direction"] == "more_resistant").sum(),
@@ -73,6 +76,6 @@ def tnr_resistance_ranking(outliers_df: pd.DataFrame) -> pd.DataFrame:
         )
 
     ranking = outliers_df.groupby("TNR").apply(_agg, include_groups=False).reset_index()
-    ranking = ranking.sort_values("mean_robust_z", ascending=False).reset_index(drop=True)
+    ranking = ranking.sort_values("mean_modified_z", ascending=False).reset_index(drop=True)
     ranking["rank_most_resistant"] = ranking.index + 1
     return ranking
