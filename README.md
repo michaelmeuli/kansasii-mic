@@ -32,7 +32,7 @@ scope, so rows matching neither are dropped. On an `MHK`-column match, the
 row's `TNR` is replaced with screening_map's canonical `TNR` for that
 isolate. The resulting long-format table carries `NR`, `PROBENNUMMER`,
 `TNR` and `MHK` from screening_map alongside the parsed MIC fields;
-the per-antibiotic distribution plots label outlier points (|modified_z| > 3.0),
+the per-antibiotic distribution plots label outlier points (|modified_z| > 1.0),
 and the heatmaps and ranking plots label isolates, by `NR` (the integer isolate
 number from screening_map). `NR`/`TNR`/`MHK` are nullable integers.
 
@@ -147,8 +147,10 @@ TNR/MHK matching and produce identical file layouts:
 - `parse_failures.csv` -- written only if any `MHK` value could not be
   parsed at all.
 - `outliers_per_antibiotic.csv`, `tnr_resistance_ranking.csv` -- see above.
-- `figures/<antibiotic>_distribution.png`, `figures/heatmap_tnr_antibiotic.png`,
-  `figures/resistance_ranking.png`.
+- `figures/<antibiotic>_distribution.png`, `figures/heatmap_tnr_antibiotic.png`
+  (cells normalized per drug to CLSI: S limit = 0, R limit = 1, green to red;
+  drugs without a CLSI breakpoint are in a second panel colored by cohort
+  `modified_z`), `figures/resistance_ranking.png`.
 
 ## Pipeline runs (immensekansasii)
 

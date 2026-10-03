@@ -10,4 +10,5 @@ dependencies:
   - pytest
   - pip
   - pip:
+      - adjustText
       - -e .

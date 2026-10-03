@@ -31,6 +31,7 @@ match the canonical names produced by :mod:`kansasii_mic.loading`.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 
@@ -66,3 +67,19 @@ def categorize(antibiotic: str, point_estimate: float) -> str | None:
     if bp.resistant_min is not None and point_estimate >= bp.resistant_min:
         return "R"
     return "I"
+
+
+def clsi_normalized(antibiotic: str, log2_mic: float) -> float | None:
+    """Place a log2 MIC on a per-drug CLSI scale: 0 = S limit, 1 = R limit.
+
+    Values below 0 are on the susceptible side, between 0 and 1 intermediate,
+    above 1 resistant; each unit spans the drug's S-to-R gap in dilutions.
+    None if the drug has no usable (S and R) breakpoint pair.
+    """
+    bp = CLSI_KANSASII_BREAKPOINTS.get(antibiotic)
+    if bp is None or bp.susceptible_max is None or bp.resistant_min is None:
+        return None
+    lo, hi = math.log2(bp.susceptible_max), math.log2(bp.resistant_min)
+    if hi <= lo:
+        return None
+    return (log2_mic - lo) / (hi - lo)

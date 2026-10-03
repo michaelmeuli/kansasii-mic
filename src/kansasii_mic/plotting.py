@@ -11,8 +11,9 @@ import matplotlib.colors
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from adjustText import adjust_text
 
-from .breakpoints import CLSI_KANSASII_BREAKPOINTS
+from .breakpoints import CLSI_KANSASII_BREAKPOINTS, clsi_normalized
 from .mgit import ERG_CATEGORIES
 
 POINT_COLOR = "#3B6FA0"
@@ -22,7 +23,7 @@ BREAKPOINT_S_COLOR = "#2E7D32"
 BREAKPOINT_R_COLOR = "#B71C1C"
 HEATMAP_CMAP = "YlOrRd"
 # Iglewicz-Hoaglin cutoff: |modified_z| above this is labeled on the distribution plots.
-LABEL_Z_THRESHOLD = 3.0
+LABEL_Z_THRESHOLD = 1.0
 
 # S/I/R/K/U category colors for the MGIT breakpoint figures.
 ERG_COLORS = {
@@ -55,10 +56,9 @@ def plot_antibiotic_distributions(outliers_df: pd.DataFrame, out_dir: Path) -> l
     out_dir.mkdir(parents=True, exist_ok=True)
     paths = []
     for antibiotic, group in outliers_df.groupby("antibiotic"):
-        group = group.sort_values("log2_mic")
-        fig, ax = plt.subplots(figsize=(7, 3.2))
-        rng = np.random.default_rng(abs(hash(antibiotic)) % (2**32))
-        jitter = rng.uniform(-0.15, 0.15, size=len(group))
+        group = group.sort_values(["log2_mic", "NR"])
+        fig, ax = plt.subplots(figsize=(7, 4.2))
+        jitter = _tie_spread(group["log2_mic"]).to_numpy()
         colors = [
             OUTLIER_RESISTANT_COLOR
             if d == "more_resistant"
@@ -76,9 +76,12 @@ def plot_antibiotic_distributions(outliers_df: pd.DataFrame, out_dir: Path) -> l
             if bp.resistant_min is not None:
                 ax.axvline(np.log2(bp.resistant_min), color=BREAKPOINT_R_COLOR, linestyle="--", linewidth=1.2, label=f"CLSI R ≥ {bp.resistant_min}")
 
+        label_x, label_y, texts = [], [], []
         for _, row in group[group["modified_z"].abs() > LABEL_Z_THRESHOLD].iterrows():
             y = jitter[group.index.get_loc(row.name)]
-            ax.annotate(str(int(row["NR"])), (row["log2_mic"], y), textcoords="offset points", xytext=(4, 4), fontsize=7, color="#333333")
+            label_x.append(row["log2_mic"])
+            label_y.append(y)
+            texts.append(ax.text(row["log2_mic"], y, str(int(row["NR"])), fontsize=7, color="#333333"))
 
         ax.set_yticks([])
         ax.set_ylim(-0.5, 0.5)
@@ -87,6 +90,9 @@ def plot_antibiotic_distributions(outliers_df: pd.DataFrame, out_dir: Path) -> l
         ax.set_xticklabels([_fmt_mic(v) for v in xticks], rotation=45, ha="right", fontsize=8)
         ax.set_xlabel("MIC (mg/L, log2 scale)")
         ax.set_title(f"{antibiotic} -- MIC distribution across isolates (n={len(group)})")
+        if texts:
+            # Needs final axis limits/ticks; spreads labels apart with thin leader lines.
+            adjust_text(texts, x=label_x, y=label_y, ax=ax, arrowprops=dict(arrowstyle="-", color="#999999", lw=0.5))
         if bp is not None:
             ax.legend(loc="upper left", fontsize=7, frameon=False)
         fig.tight_layout()
@@ -97,6 +103,15 @@ def plot_antibiotic_distributions(outliers_df: pd.DataFrame, out_dir: Path) -> l
     return paths
 
 
+def _tie_spread(log2_mic: pd.Series, step: float = 0.05, max_span: float = 0.8) -> pd.Series:
+    """Deterministic y position: isolates sharing a MIC are evenly spaced around y=0, in row order."""
+    by_value = log2_mic.groupby(log2_mic)
+    rank = by_value.cumcount()
+    n = by_value.transform("size")
+    step_per_group = np.minimum(step, max_span / (n - 1).clip(lower=1))
+    return (rank - (n - 1) / 2) * step_per_group
+
+
 def _fmt_mic(log2_value: float) -> str:
     value = 2**log2_value
     if value == int(value):
@@ -105,23 +120,57 @@ def _fmt_mic(log2_value: float) -> str:
 
 
 def plot_heatmap(outliers_df: pd.DataFrame, ranking_df: pd.DataFrame, out_dir: Path) -> Path:
-    out_dir.mkdir(parents=True, exist_ok=True)
-    pivot = outliers_df.pivot_table(index="NR", columns="antibiotic", values="log2_mic", aggfunc="mean")
-    isolate_order = [p for p in ranking_df["NR"] if p in pivot.index]
-    pivot = pivot.loc[isolate_order]
+    """Isolate x antibiotic heatmap, normalized per drug to CLSI (S limit = 0, R limit = 1).
 
-    fig, ax = plt.subplots(figsize=(max(6, 0.45 * pivot.shape[1]), max(5, 0.22 * pivot.shape[0])))
-    masked = np.ma.masked_invalid(pivot.values)
-    cmap = matplotlib.colormaps[HEATMAP_CMAP].copy()
-    cmap.set_bad("#EEEEEE")
-    im = ax.imshow(masked, aspect="auto", cmap=cmap)
-    ax.set_xticks(range(pivot.shape[1]))
-    ax.set_xticklabels(pivot.columns, rotation=45, ha="right", fontsize=8)
-    ax.set_yticks(range(pivot.shape[0]))
-    ax.set_yticklabels(pivot.index, fontsize=6)
-    ax.set_title("MIC (log2 mg/L) by isolate (NR) x antibiotic\nrows sorted from most- to least-resistant overall")
-    cbar = fig.colorbar(im, ax=ax, shrink=0.6)
-    cbar.set_label("log2 MIC (mg/L)")
+    Drugs without a CLSI breakpoint pair go in a second panel, colored by cohort modified_z.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    df = outliers_df.copy()
+    df["clsi_norm"] = [clsi_normalized(a, v) for a, v in zip(df["antibiotic"], df["log2_mic"])]
+    has_bp = df.groupby("antibiotic")["clsi_norm"].apply(lambda s: s.notna().any())
+    bp_drugs = sorted(has_bp[has_bp].index)
+    other_drugs = sorted(has_bp[~has_bp].index)
+
+    order = list(ranking_df["NR"])
+    panels = [
+        (df[df["antibiotic"].isin(bp_drugs)], "clsi_norm", bp_drugs),
+        (df[df["antibiotic"].isin(other_drugs)], "modified_z", other_drugs),
+    ]
+    panels = [p for p in panels if p[2]]
+
+    n_rows = len(order)
+    widths = [len(drugs) for _, _, drugs in panels]
+    fig, axes = plt.subplots(
+        1,
+        len(panels),
+        figsize=(max(6, 0.5 * sum(widths) + 3 * len(panels)), max(5, 0.22 * n_rows)),
+        gridspec_kw={"width_ratios": widths},
+        squeeze=False,
+    )
+    for ax, (sub, value_col, drugs) in zip(axes[0], panels):
+        pivot = sub.pivot_table(index="NR", columns="antibiotic", values=value_col, aggfunc="mean")
+        pivot = pivot.reindex(index=order, columns=drugs)
+        if value_col == "clsi_norm":
+            cmap = matplotlib.colormaps["RdYlGn_r"].copy()
+            norm = matplotlib.colors.TwoSlopeNorm(vmin=-2, vcenter=0.5, vmax=3)
+            label, ticks = "MIC vs CLSI breakpoints", [0, 1]
+        else:
+            cmap = matplotlib.colormaps["coolwarm"].copy()
+            norm = matplotlib.colors.TwoSlopeNorm(vmin=-3, vcenter=0, vmax=3)
+            label, ticks = "modified z (cohort; no CLSI breakpoint)", [-3, 0, 3]
+        cmap.set_bad("white")
+        im = ax.imshow(np.ma.masked_invalid(pivot.values), aspect="auto", cmap=cmap, norm=norm)
+        ax.set_xticks(range(pivot.shape[1]))
+        ax.set_xticklabels(pivot.columns, rotation=45, ha="right", fontsize=8)
+        ax.set_yticks(range(pivot.shape[0]))
+        ax.set_yticklabels(pivot.index, fontsize=6)
+        ax.grid(False)
+        cbar = fig.colorbar(im, ax=ax, shrink=0.6, ticks=ticks, location="bottom", pad=0.25)
+        if value_col == "clsi_norm":
+            cbar.ax.set_xticklabels(["S limit", "R limit"])
+        cbar.set_label(label)
+    axes[0][0].set_ylabel("isolate (NR), most to least resistant overall")
+    fig.suptitle("MIC by isolate x antibiotic, normalized to CLSI (S limit = 0, R limit = 1); white = not tested")
     fig.tight_layout()
     path = out_dir / "heatmap_tnr_antibiotic.png"
     fig.savefig(path, dpi=150)
