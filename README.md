@@ -32,8 +32,9 @@ scope, so rows matching neither are dropped. On an `MHK`-column match, the
 row's `TNR` is replaced with screening_map's canonical `TNR` for that
 isolate. The resulting long-format table carries `NR`, `PROBENNUMMER`,
 `TNR` and `MHK` from screening_map alongside the parsed MIC fields;
-figures are labeled by `PROBENNUMMER` (a string), while `NR`/`TNR`/`MHK`
-are nullable integers.
+the per-antibiotic distribution plots label outlier points (|modified_z| > 3.5)
+by `NR`, while the heatmaps and ranking plots are labeled by `PROBENNUMMER`
+(a string). `NR`/`TNR`/`MHK` are nullable integers.
 
 ## Data-quality handling
 
