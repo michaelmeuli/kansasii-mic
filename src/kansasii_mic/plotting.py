@@ -232,6 +232,9 @@ def plot_mgit_heatmap(mgit_long_df: pd.DataFrame, ranking_df: pd.DataFrame, out_
     erg_code = {cat: i for i, cat in enumerate(ERG_CATEGORIES)}
     df["erg_code"] = df["erg"].map(erg_code)
     pivot = df.pivot_table(index="NR", columns="column", values="erg_code", aggfunc="mean")
+    # pivot sorts the string labels ("20 mg/l" < "4 mg/l"); order numerically instead
+    column_order = df.drop_duplicates("column").sort_values(["antibiotic", "concentration_mg_l"])["column"]
+    pivot = pivot[column_order]
     isolate_order = [p for p in ranking_df["NR"] if p in pivot.index]
     pivot = pivot.loc[isolate_order]
 
