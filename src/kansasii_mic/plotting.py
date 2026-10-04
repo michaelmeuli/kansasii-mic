@@ -340,24 +340,34 @@ def plot_mgit_mic_counts(mic_counts_df: pd.DataFrame, out_dir: Path) -> list[Pat
 
 
 def plot_mic_count_table(counts_df: pd.DataFrame, title: str, out_path: Path) -> Path:
-    """Antibiotic x MIC concentration table of isolate counts (long df: antibiotic, mic_mg_l, n)."""
+    """Antibiotic x MIC table of isolate counts (long df: antibiotic, mic_mg_l, n[, mic_label]).
+
+    Rows with a ">x" ``mic_label`` (MIC above the tested range) sort after x. Blank = no
+    isolates recorded / concentration not tested; an explicit 0 means tested, none found.
+    """
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    pivot = counts_df.pivot_table(index="antibiotic", columns="mic_mg_l", values="n", aggfunc="sum")
-    cells = [["" if pd.isna(v) or v == 0 else str(int(v)) for v in row] for row in pivot.to_numpy()]
+    df = counts_df.copy()
+    if "mic_label" not in df:
+        df["mic_label"] = [f"{v:.2g}" for v in df["mic_mg_l"]]
+    df["key"] = [float(l[1:]) + 0.5 * 1e-9 if l.startswith(">") else float(l) for l in df["mic_label"]]
+    order = df.drop_duplicates("mic_label").sort_values("key")["mic_label"].tolist()
+    pivot = df.pivot_table(index="antibiotic", columns="mic_label", values="n", aggfunc="sum").reindex(columns=order)
+    cells = [["" if pd.isna(v) else str(int(v)) for v in row] for row in pivot.to_numpy()]
     fig, ax = plt.subplots(figsize=(max(8, 0.55 * pivot.shape[1] + 3), 0.9 + 0.36 * (len(pivot) + 1)))
     ax.axis("off")
     fig.subplots_adjust(left=0.01, right=0.99, top=0.88, bottom=0.04)
     table = ax.table(
         cellText=cells,
         rowLabels=list(pivot.index),
-        colLabels=[f"{c:.2g}" for c in pivot.columns],
+        colLabels=list(pivot.columns),
         cellLoc="center",
         loc="upper center",
     )
     table.auto_set_font_size(False)
     table.set_fontsize(9)
     table.scale(1, 1.5)
-    vmax = np.nanmax(pivot.to_numpy())
+    values = pivot.to_numpy()
+    vmax = np.nanmax(values)
     for (row, col), cell in table.get_celld().items():
         cell.set_edgecolor("#CCCCCC")
         if row == 0:
@@ -366,11 +376,11 @@ def plot_mic_count_table(counts_df: pd.DataFrame, title: str, out_path: Path) ->
         elif col == -1:
             cell.set_text_props(weight="bold")
         else:
-            v = pivot.to_numpy()[row - 1, col]
+            v = values[row - 1, col]
             if not pd.isna(v) and v > 0:
                 cell.set_facecolor(matplotlib.colors.to_hex(matplotlib.cm.Blues(0.15 + 0.6 * v / vmax)))
     ax.set_title(title, fontsize=12, weight="bold")
-    fig.text(0.01, 0.01, "Columns: MIC (mg/L). Cells: number of isolates; blank = 0.", fontsize=7, color="#555555")
+    fig.text(0.01, 0.01, "Columns: MIC (mg/L). Cells: number of isolates; blank = not tested / none recorded.", fontsize=7, color="#555555")
     fig.savefig(out_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
     return out_path

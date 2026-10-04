@@ -152,7 +152,7 @@ TNR/MHK matching and produce identical file layouts:
   MHK: CLSI breakpoint ranges, only drugs with a CLSI breakpoint. MGIT: concentrations at which
   each call occurred; each isolate counted once per drug by worst call (R > I > S), K/U ignored.
 - `mic_counts_per_concentration.csv`, `figures/mic_counts_per_concentration.png` (MHK) and
-  `mgit_mic_counts_per_concentration.csv`, `figures/<antibiotic>_mgit_mic_counts.png` (MGIT) -- isolates per MIC.
+  `mgit_mic_counts_per_concentration.csv`, `figures/mgit_mic_counts_per_concentration.png`, `figures/<antibiotic>_mgit_mic_counts.png` (MGIT) -- isolates per MIC.
   MGIT MIC = lowest tested concentration called S; isolates with no S call go in a `>highest` bin.
 - `figures/<antibiotic>_distribution.png`, `figures/heatmap_tnr_antibiotic.png`
   (cells normalized per drug to CLSI: S limit = 0, R limit = 1, green to red;

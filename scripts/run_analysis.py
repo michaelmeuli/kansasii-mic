@@ -106,6 +106,11 @@ def _run_mgit_pipeline(mgit_long_df, mgit_failures_df, out_dir: Path) -> None:
     mic_counts_df = mgit_mic_counts(mgit_long_df)
     mic_counts_df.to_csv(out_dir / "mgit_mic_counts_per_concentration.csv", index=False)
     plot_mgit_mic_counts(mic_counts_df, figures_dir)
+    plot_mic_count_table(
+        mic_counts_df,
+        f"MGIT: isolates per MIC (lowest S concentration; n={mgit_long_df['TNR'].nunique()} isolates)",
+        figures_dir / "mgit_mic_counts_per_concentration.png",
+    )
 
     count_paths = plot_mgit_category_counts(summary_df, figures_dir)
     heatmap_path = plot_mgit_heatmap(mgit_long_df, ranking_df, figures_dir)
