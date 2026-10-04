@@ -8,6 +8,7 @@ from pathlib import Path
 
 from kansasii_mic.loading import load_mgit_long, load_mic_long
 from kansasii_mic.mgit import filter_int_erg_i_or_r, mgit_summary, tnr_mgit_resistance_ranking
+from kansasii_mic.overview import mgit_overview, mhk_overview
 from kansasii_mic.outliers import per_antibiotic_outliers, tnr_resistance_ranking
 from kansasii_mic.plotting import (
     plot_antibiotic_distributions,
@@ -15,6 +16,7 @@ from kansasii_mic.plotting import (
     plot_mgit_category_counts,
     plot_mgit_heatmap,
     plot_mgit_resistance_ranking,
+    plot_overview_table,
     plot_resistance_ranking,
 )
 from kansasii_mic.qc import apply_qc
@@ -37,6 +39,15 @@ def _run_pipeline(long_df, failures_df, out_dir: Path, label: str) -> None:
 
     ranking_df = tnr_resistance_ranking(outliers_df)
     ranking_df.to_csv(out_dir / "tnr_resistance_ranking.csv", index=False)
+
+    overview_df = mhk_overview(clean_df)
+    overview_df.to_csv(out_dir / "overview_table.csv", index=False)
+    plot_overview_table(
+        overview_df,
+        f"MHK (broth microdilution) overview vs CLSI M. kansasii breakpoints (n={clean_df['TNR'].nunique()} isolates)",
+        figures_dir / "overview_table.png",
+        "Only antibiotics with a CLSI M. kansasii breakpoint. MIC point estimates (censored values at their bound; ranges at geometric mean).",
+    )
 
     dist_paths = plot_antibiotic_distributions(outliers_df, figures_dir)
     heatmap_path = plot_heatmap(outliers_df, ranking_df, figures_dir)
@@ -72,6 +83,15 @@ def _run_mgit_pipeline(mgit_long_df, mgit_failures_df, out_dir: Path) -> None:
 
     ranking_df = tnr_mgit_resistance_ranking(mgit_long_df)
     ranking_df.to_csv(out_dir / "tnr_mgit_resistance_ranking.csv", index=False)
+
+    overview_df = mgit_overview(mgit_long_df)
+    overview_df.to_csv(out_dir / "overview_table.csv", index=False)
+    plot_overview_table(
+        overview_df,
+        f"MGIT breakpoint overview (n={mgit_long_df['TNR'].nunique()} isolates)",
+        figures_dir / "overview_table.png",
+        "Concentrations = mg/L at which that call occurred. Isolates counted once per antibiotic by worst call (R > I > S); K/U calls ignored.",
+    )
 
     count_paths = plot_mgit_category_counts(summary_df, figures_dir)
     heatmap_path = plot_mgit_heatmap(mgit_long_df, ranking_df, figures_dir)

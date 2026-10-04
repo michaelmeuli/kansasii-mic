@@ -147,6 +147,10 @@ TNR/MHK matching and produce identical file layouts:
 - `parse_failures.csv` -- written only if any `MHK` value could not be
   parsed at all.
 - `outliers_per_antibiotic.csv`, `tnr_resistance_ranking.csv` -- see above.
+- `overview_table.csv`, `figures/overview_table.png` -- per-antibiotic overview: S/I/R
+  concentrations (mg/L) and number of isolates susceptible/intermediate/resistant.
+  MHK: CLSI breakpoint ranges, only drugs with a CLSI breakpoint. MGIT: concentrations at which
+  each call occurred; each isolate counted once per drug by worst call (R > I > S), K/U ignored.
 - `figures/<antibiotic>_distribution.png`, `figures/heatmap_tnr_antibiotic.png`
   (cells normalized per drug to CLSI: S limit = 0, R limit = 1, green to red;
   drugs without a CLSI breakpoint are in a second panel colored by cohort

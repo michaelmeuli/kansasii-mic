@@ -274,3 +274,43 @@ def plot_mgit_resistance_ranking(ranking_df: pd.DataFrame, out_dir: Path, top_n:
     fig.savefig(path, dpi=150)
     plt.close(fig)
     return path
+
+
+_OVERVIEW_HEADERS = ["Antibiotic", "Susceptible\nconc. (mg/L)", "Intermediate\nconc. (mg/L)", "Resistant\nconc. (mg/L)", "n\nsusceptible", "n\nintermediate", "n\nresistant"]
+
+
+def plot_overview_table(overview_df: pd.DataFrame, title: str, out_path: Path, footnote: str = "") -> Path:
+    """Render an overview table (see overview.OVERVIEW_COLUMNS) as an image."""
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig_h = 0.9 + 0.36 * (len(overview_df) + 1)
+    fig, ax = plt.subplots(figsize=(11, fig_h))
+    ax.axis("off")
+    fig.subplots_adjust(left=0.01, right=0.99, top=0.88, bottom=0.04)
+    table = ax.table(
+        cellText=overview_df.astype(str).values,
+        colLabels=_OVERVIEW_HEADERS,
+        cellLoc="center",
+        loc="upper center",
+        colWidths=[0.29, 0.13, 0.16, 0.13, 0.09, 0.11, 0.09],
+    )
+    table.auto_set_font_size(False)
+    table.set_fontsize(9)
+    table.scale(1, 1.6)
+    count_colors = {4: BREAKPOINT_S_COLOR, 5: ERG_COLORS["I"], 6: BREAKPOINT_R_COLOR}
+    for (row, col), cell in table.get_celld().items():
+        cell.set_edgecolor("#CCCCCC")
+        if row == 0:
+            cell.set_text_props(weight="bold", color="white")
+            cell.set_facecolor(count_colors.get(col, "#444444"))
+            cell.set_height(cell.get_height() * 1.5)
+        elif col == 0:
+            cell.set_text_props(weight="bold", ha="left")
+            cell._loc = "left"
+        elif row % 2 == 0:
+            cell.set_facecolor("#F5F5F5")
+    ax.set_title(title, fontsize=12, weight="bold")
+    if footnote:
+        fig.text(0.01, 0.01, footnote, fontsize=7, color="#555555", ha="left", va="bottom")
+    fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    return out_path
