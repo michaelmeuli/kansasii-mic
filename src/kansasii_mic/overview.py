@@ -74,3 +74,35 @@ def mhk_overview(mic_df: pd.DataFrame) -> pd.DataFrame:
             }
         )
     return pd.DataFrame(rows, columns=OVERVIEW_COLUMNS)
+
+
+def mgit_mic_counts(mgit_long_df: pd.DataFrame) -> pd.DataFrame:
+    """MGIT: isolates per MIC, taking MIC = lowest tested concentration called S (no growth).
+
+    Isolates with no S call but at least one I/R call are counted at
+    ``">" + highest tested concentration`` (MIC above the tested range).
+    Isolates with only K/U calls are skipped. Tested concentrations with no
+    isolates are kept with n = 0. Columns: antibiotic, mic_mg_l (NaN for the
+    ">" bin), mic_label, n.
+    """
+    rows = []
+    for antibiotic, group in mgit_long_df.groupby("antibiotic"):
+        tested = sorted(group["concentration_mg_l"].unique())
+        counts = {c: 0 for c in tested}
+        above = 0
+        for _, iso in group[group["int_erg"].isin(_SEVERITY)].groupby("TNR"):
+            s = iso.loc[iso["int_erg"] == "S", "concentration_mg_l"]
+            if len(s):
+                counts[s.min()] += 1
+            else:
+                above += 1
+        for c in tested:
+            rows.append({"antibiotic": antibiotic, "mic_mg_l": c, "mic_label": f"{c:g}", "n": counts[c]})
+        rows.append({"antibiotic": antibiotic, "mic_mg_l": float("nan"), "mic_label": f">{tested[-1]:g}", "n": above})
+    return pd.DataFrame(rows, columns=["antibiotic", "mic_mg_l", "mic_label", "n"])
+
+
+def mhk_mic_counts(mic_df: pd.DataFrame) -> pd.DataFrame:
+    """MHK: isolates per MIC point estimate per antibiotic (long format: antibiotic, mic_mg_l, n)."""
+    counts = mic_df.groupby(["antibiotic", "point_estimate"]).size().rename("n").reset_index()
+    return counts.rename(columns={"point_estimate": "mic_mg_l"})

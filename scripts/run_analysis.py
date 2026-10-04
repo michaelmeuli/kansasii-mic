@@ -8,13 +8,15 @@ from pathlib import Path
 
 from kansasii_mic.loading import load_mgit_long, load_mic_long
 from kansasii_mic.mgit import filter_int_erg_i_or_r, mgit_summary, tnr_mgit_resistance_ranking
-from kansasii_mic.overview import mgit_overview, mhk_overview
+from kansasii_mic.overview import mgit_mic_counts, mgit_overview, mhk_mic_counts, mhk_overview
 from kansasii_mic.outliers import per_antibiotic_outliers, tnr_resistance_ranking
 from kansasii_mic.plotting import (
     plot_antibiotic_distributions,
     plot_heatmap,
     plot_mgit_category_counts,
     plot_mgit_heatmap,
+    plot_mgit_mic_counts,
+    plot_mic_count_table,
     plot_mgit_resistance_ranking,
     plot_overview_table,
     plot_resistance_ranking,
@@ -47,6 +49,14 @@ def _run_pipeline(long_df, failures_df, out_dir: Path, label: str) -> None:
         f"MHK (broth microdilution) overview vs CLSI M. kansasii breakpoints (n={clean_df['TNR'].nunique()} isolates)",
         figures_dir / "overview_table.png",
         "Only antibiotics with a CLSI M. kansasii breakpoint. MIC point estimates (censored values at their bound; ranges at geometric mean).",
+    )
+
+    counts_df = mhk_mic_counts(clean_df)
+    counts_df.to_csv(out_dir / "mic_counts_per_concentration.csv", index=False)
+    plot_mic_count_table(
+        counts_df,
+        f"MHK: isolates per MIC concentration (n={clean_df['TNR'].nunique()} isolates)",
+        figures_dir / "mic_counts_per_concentration.png",
     )
 
     dist_paths = plot_antibiotic_distributions(outliers_df, figures_dir)
@@ -92,6 +102,10 @@ def _run_mgit_pipeline(mgit_long_df, mgit_failures_df, out_dir: Path) -> None:
         figures_dir / "overview_table.png",
         "Concentrations = mg/L at which that call occurred. Isolates counted once per antibiotic by worst call (R > I > S); K/U calls ignored.",
     )
+
+    mic_counts_df = mgit_mic_counts(mgit_long_df)
+    mic_counts_df.to_csv(out_dir / "mgit_mic_counts_per_concentration.csv", index=False)
+    plot_mgit_mic_counts(mic_counts_df, figures_dir)
 
     count_paths = plot_mgit_category_counts(summary_df, figures_dir)
     heatmap_path = plot_mgit_heatmap(mgit_long_df, ranking_df, figures_dir)

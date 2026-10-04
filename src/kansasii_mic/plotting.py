@@ -314,3 +314,63 @@ def plot_overview_table(overview_df: pd.DataFrame, title: str, out_path: Path, f
     fig.savefig(out_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
     return out_path
+
+
+def plot_mgit_mic_counts(mic_counts_df: pd.DataFrame, out_dir: Path) -> list[Path]:
+    """One bar chart per antibiotic: MIC (lowest S concentration) on x, isolate count on y."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    paths = []
+    for antibiotic, group in mic_counts_df.groupby("antibiotic"):
+        fig, ax = plt.subplots(figsize=(6, 3.4))
+        x = np.arange(len(group))
+        colors = [BREAKPOINT_R_COLOR if np.isnan(v) else POINT_COLOR for v in group["mic_mg_l"]]
+        bars = ax.bar(x, group["n"], color=colors, width=0.6)
+        ax.bar_label(bars, fontsize=8)
+        ax.set_xticks(x)
+        ax.set_xticklabels(group["mic_label"])
+        ax.set_xlabel("MIC (mg/L) = lowest concentration with no growth (S)")
+        ax.set_ylabel("Isolates (n)")
+        ax.set_title(f"{antibiotic} -- MGIT MIC distribution (n={int(group['n'].sum())})")
+        fig.tight_layout()
+        path = out_dir / f"{_safe_filename(antibiotic)}_mgit_mic_counts.png"
+        fig.savefig(path, dpi=150)
+        plt.close(fig)
+        paths.append(path)
+    return paths
+
+
+def plot_mic_count_table(counts_df: pd.DataFrame, title: str, out_path: Path) -> Path:
+    """Antibiotic x MIC concentration table of isolate counts (long df: antibiotic, mic_mg_l, n)."""
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    pivot = counts_df.pivot_table(index="antibiotic", columns="mic_mg_l", values="n", aggfunc="sum")
+    cells = [["" if pd.isna(v) or v == 0 else str(int(v)) for v in row] for row in pivot.to_numpy()]
+    fig, ax = plt.subplots(figsize=(max(8, 0.55 * pivot.shape[1] + 3), 0.9 + 0.36 * (len(pivot) + 1)))
+    ax.axis("off")
+    fig.subplots_adjust(left=0.01, right=0.99, top=0.88, bottom=0.04)
+    table = ax.table(
+        cellText=cells,
+        rowLabels=list(pivot.index),
+        colLabels=[f"{c:.2g}" for c in pivot.columns],
+        cellLoc="center",
+        loc="upper center",
+    )
+    table.auto_set_font_size(False)
+    table.set_fontsize(9)
+    table.scale(1, 1.5)
+    vmax = np.nanmax(pivot.to_numpy())
+    for (row, col), cell in table.get_celld().items():
+        cell.set_edgecolor("#CCCCCC")
+        if row == 0:
+            cell.set_text_props(weight="bold", color="white")
+            cell.set_facecolor("#444444")
+        elif col == -1:
+            cell.set_text_props(weight="bold")
+        else:
+            v = pivot.to_numpy()[row - 1, col]
+            if not pd.isna(v) and v > 0:
+                cell.set_facecolor(matplotlib.colors.to_hex(matplotlib.cm.Blues(0.15 + 0.6 * v / vmax)))
+    ax.set_title(title, fontsize=12, weight="bold")
+    fig.text(0.01, 0.01, "Columns: MIC (mg/L). Cells: number of isolates; blank = 0.", fontsize=7, color="#555555")
+    fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    return out_path

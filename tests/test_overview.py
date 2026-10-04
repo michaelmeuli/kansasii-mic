@@ -28,3 +28,18 @@ def test_mhk_overview_uses_clsi_breakpoints_and_skips_others():
     out = mhk_overview(df)
     assert list(out["antibiotic"]) == ["Rifampicin"]
     assert (out.nr_susceptible[0], out.nr_intermediate[0], out.nr_resistant[0]) == (2, 0, 1)
+
+
+def test_mgit_mic_counts_lowest_s_and_above_range():
+    from kansasii_mic.overview import mgit_mic_counts
+
+    df = pd.DataFrame(
+        {
+            "TNR": [1, 1, 2, 2, 3, 3],
+            "antibiotic": ["A"] * 6,
+            "concentration_mg_l": [1.0, 4.0] * 3,
+            "int_erg": ["R", "S", "S", "S", "R", "R"],
+        }
+    )
+    out = mgit_mic_counts(df).set_index("mic_label")["n"].to_dict()
+    assert out == {"1": 1, "4": 1, ">4": 1}
