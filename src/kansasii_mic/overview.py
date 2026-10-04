@@ -50,6 +50,14 @@ def mgit_overview(mgit_long_df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=OVERVIEW_COLUMNS)
 
 
+def _intermediate_label(s: float, r: float) -> str:
+    """Doubling dilutions strictly between S and R limits, e.g. "32", "2-4", or "--" if none."""
+    lo, hi = s * 2, r / 2
+    if lo > hi:
+        return "--"
+    return f"{lo:g}" if lo == hi else f"{lo:g}-{hi:g}"
+
+
 def mhk_overview(mic_df: pd.DataFrame) -> pd.DataFrame:
     """MHK: CLSI breakpoint ranges (mg/L) and isolates per category.
 
@@ -66,7 +74,7 @@ def mhk_overview(mic_df: pd.DataFrame) -> pd.DataFrame:
             {
                 "antibiotic": antibiotic,
                 "susceptible_concentration": f"<= {s:g}",
-                "intermediate_concentration": f"> {s:g} and < {r:g}",
+                "intermediate_concentration": _intermediate_label(s, r),
                 "resistant_concentration": f">= {r:g}",
                 "nr_susceptible": int(cats.get("S", 0)),
                 "nr_intermediate": int(cats.get("I", 0)),

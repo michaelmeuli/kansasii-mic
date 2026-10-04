@@ -43,3 +43,11 @@ def test_mgit_mic_counts_lowest_s_and_above_range():
     )
     out = mgit_mic_counts(df).set_index("mic_label")["n"].to_dict()
     assert out == {"1": 1, "4": 1, ">4": 1}
+
+
+def test_mhk_intermediate_label_matches_readme():
+    from kansasii_mic.overview import _intermediate_label
+
+    assert _intermediate_label(16, 64) == "32"
+    assert _intermediate_label(1, 8) == "2-4"
+    assert _intermediate_label(1, 2) == "--"
