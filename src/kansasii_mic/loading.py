@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+from typing import Any, cast
 
 import pandas as pd
 
@@ -68,9 +69,9 @@ def _lookup_screening_map(
     label is reused across the two source files for different things.
     """
     if tnr in smap_by_tnr.index:
-        return smap_by_tnr.loc[tnr]
+        return cast("pd.Series[Any]", smap_by_tnr.loc[tnr])
     if tnr in smap_by_mhk.index:
-        return smap_by_mhk.loc[tnr]
+        return cast("pd.Series[Any]", smap_by_mhk.loc[tnr])
     return None
 
 
@@ -87,16 +88,17 @@ def _match_screening_map_and_parse(
     rows = []
     failures = []
     for row in subset.itertuples(index=False):
-        meta = _lookup_screening_map(row.TNR, smap_by_tnr, smap_by_mhk)
+        meta = _lookup_screening_map(cast(int, row.TNR), smap_by_tnr, smap_by_mhk)
         if meta is None:
             continue
 
+        mhk, raw_antibiotic = cast(str, row.MHK), cast(str, row.ANTIBIOTIKA)
         try:
-            parsed = parse_mic(row.MHK)
+            parsed = parse_mic(mhk)
         except MicParseError as exc:
-            failures.append({"TNR": meta["TNR"], "ANTIBIOTIKA": row.ANTIBIOTIKA, "MHK": row.MHK, "error": str(exc)})
+            failures.append({"TNR": meta["TNR"], "ANTIBIOTIKA": raw_antibiotic, "MHK": mhk, "error": str(exc)})
             continue
-        canonical = CANONICAL_ANTIBIOTIC.get(row.ANTIBIOTIKA, row.ANTIBIOTIKA)
+        canonical = CANONICAL_ANTIBIOTIC.get(raw_antibiotic, raw_antibiotic)
         rows.append(
             {
                 "NR": meta["NR"],
@@ -140,12 +142,12 @@ def _match_screening_map_mgit(
     rows = []
     failures = []
     for row in subset.itertuples(index=False):
-        meta = _lookup_screening_map(row.TNR, smap_by_tnr, smap_by_mhk)
+        meta = _lookup_screening_map(cast(int, row.TNR), smap_by_tnr, smap_by_mhk)
         if meta is None:
             continue
 
         try:
-            antibiotic, concentration = _parse_mgit_label(row.ANTIBIOTIKA)
+            antibiotic, concentration = _parse_mgit_label(cast(str, row.ANTIBIOTIKA))
         except MgitLabelError as exc:
             failures.append({"TNR": meta["TNR"], "ANTIBIOTIKA": row.ANTIBIOTIKA, "error": str(exc)})
             continue
@@ -201,7 +203,7 @@ def _load_smap_indexes(screening_map_csv: Path) -> tuple[pd.DataFrame, pd.DataFr
     by_tnr_all = pd.concat(parts)
     clash = by_tnr_all.drop_duplicates(subset=["_key", "NR"]).duplicated(subset="_key", keep=False)
     if clash.any():
-        keys = sorted(by_tnr_all.drop_duplicates(subset=["_key", "NR"])["_key"][clash.values].unique())
+        keys = sorted(by_tnr_all.drop_duplicates(subset=["_key", "NR"])["_key"][clash.to_numpy()].unique())
         print(f"WARNING: TNR(s) shared by different isolates in {screening_map_csv.name}: {keys}")
     smap_by_tnr = by_tnr_all.drop_duplicates(subset="_key", keep="first").set_index("_key")
     smap_by_tnr.index.name = None

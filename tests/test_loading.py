@@ -1,9 +1,11 @@
+from pathlib import Path
+
 import pandas as pd
 
 from kansasii_mic.loading import load_mic_long
 
 
-def _write(tmp_path):
+def _write(tmp_path: Path) -> tuple[Path, Path]:
     link = tmp_path / "link.csv"
     link.write_text(
         "NR,PROBENNUMMER,LNR,LNR2,TNR,TNR_NGS,TNR3,TNR4,TNR5,TNR6,NGS,MHK,LABEL\n"
@@ -22,7 +24,7 @@ def _write(tmp_path):
     return mic, link
 
 
-def test_matches_all_tnr_columns_and_mhk(tmp_path):
+def test_matches_all_tnr_columns_and_mhk(tmp_path: Path) -> None:
     mic, link = _write(tmp_path)
     df, _ = load_mic_long(mic, link)
     assert sorted(df["PROBENNUMMER"]) == ["P1", "P2", "P3"]

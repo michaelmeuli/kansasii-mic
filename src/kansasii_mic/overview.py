@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+
 import pandas as pd
 
 from .breakpoints import CLSI_KANSASII_BREAKPOINTS, categorize
@@ -20,7 +22,7 @@ OVERVIEW_COLUMNS = [
 _SEVERITY = {"S": 0, "I": 1, "R": 2}
 
 
-def _fmt(values) -> str:
+def _fmt(values: Iterable[float]) -> str:
     return ", ".join(f"{v:g}" for v in sorted(set(values))) or "-"
 
 
@@ -64,11 +66,13 @@ def mhk_overview(mic_df: pd.DataFrame) -> pd.DataFrame:
     Only antibiotics with a CLSI *M. kansasii* breakpoint are included.
     """
     rows = []
-    for antibiotic, group in mic_df.groupby("antibiotic"):
+    for antibiotic_key, group in mic_df.groupby("antibiotic"):
+        antibiotic = str(antibiotic_key)
         bp = CLSI_KANSASII_BREAKPOINTS.get(antibiotic)
-        if bp is None:
+        if bp is None or bp.susceptible_max is None or bp.resistant_min is None:
             continue
-        cats = pd.Series([categorize(antibiotic, v) for v in group["point_estimate"]]).value_counts()
+        calls = [categorize(antibiotic, v) for v in group["point_estimate"]]
+        cats = pd.Series(calls, dtype=object).value_counts()
         s, r = bp.susceptible_max, bp.resistant_min
         rows.append(
             {

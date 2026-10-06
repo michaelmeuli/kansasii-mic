@@ -6,6 +6,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+import pandas as pd
+
 from kansasii_mic.loading import load_mgit_long, load_mic_long
 from kansasii_mic.mgit import filter_int_erg_i_or_r, mgit_summary, tnr_mgit_resistance_ranking
 from kansasii_mic.overview import mgit_mic_counts, mgit_overview, mhk_mic_counts, mhk_overview
@@ -24,7 +26,7 @@ from kansasii_mic.plotting import (
 from kansasii_mic.qc import apply_qc
 
 
-def _run_pipeline(long_df, failures_df, out_dir: Path, label: str) -> None:
+def _run_pipeline(long_df: pd.DataFrame, failures_df: pd.DataFrame, out_dir: Path, label: str) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     figures_dir = out_dir / "figures"
 
@@ -71,7 +73,7 @@ def _run_pipeline(long_df, failures_df, out_dir: Path, label: str) -> None:
     print(f"[{label}] Output directory: {out_dir}")
 
 
-def _run_mgit_pipeline(mgit_long_df, mgit_failures_df, out_dir: Path) -> None:
+def _run_mgit_pipeline(mgit_long_df: pd.DataFrame, mgit_failures_df: pd.DataFrame, out_dir: Path) -> None:
     """MGIT breakpoint rows report a categorical S/I/R/K/U call, not a continuous
     MIC, so this mirrors _run_pipeline's shape (parsed table, summary tables,
     figures) without the continuous-value QC/outlier statistics.

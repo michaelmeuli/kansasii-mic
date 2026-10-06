@@ -3,7 +3,7 @@ import pandas as pd
 from kansasii_mic.overview import mgit_overview, mhk_overview
 
 
-def test_mgit_overview_counts_worst_call_per_isolate():
+def test_mgit_overview_counts_worst_call_per_isolate() -> None:
     df = pd.DataFrame(
         {
             "TNR": [1, 1, 2, 2, 3],
@@ -18,7 +18,7 @@ def test_mgit_overview_counts_worst_call_per_isolate():
     assert row.resistant_concentration == "1"
 
 
-def test_mhk_overview_uses_clsi_breakpoints_and_skips_others():
+def test_mhk_overview_uses_clsi_breakpoints_and_skips_others() -> None:
     df = pd.DataFrame(
         {
             "antibiotic": ["Rifampicin"] * 3 + ["Ethambutol"],
@@ -30,7 +30,7 @@ def test_mhk_overview_uses_clsi_breakpoints_and_skips_others():
     assert (out.nr_susceptible[0], out.nr_intermediate[0], out.nr_resistant[0]) == (2, 0, 1)
 
 
-def test_mgit_mic_counts_lowest_s_and_above_range():
+def test_mgit_mic_counts_lowest_s_and_above_range() -> None:
     from kansasii_mic.overview import mgit_mic_counts
 
     df = pd.DataFrame(
@@ -45,7 +45,7 @@ def test_mgit_mic_counts_lowest_s_and_above_range():
     assert out == {"1": 1, "4": 1, ">4": 1}
 
 
-def test_mhk_intermediate_label_matches_readme():
+def test_mhk_intermediate_label_matches_readme() -> None:
     from kansasii_mic.overview import _intermediate_label
 
     assert _intermediate_label(16, 64) == "32"

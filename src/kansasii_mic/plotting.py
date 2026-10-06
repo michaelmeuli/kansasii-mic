@@ -55,7 +55,8 @@ def plot_antibiotic_distributions(outliers_df: pd.DataFrame, out_dir: Path) -> l
     """One strip plot per antibiotic: log2 MIC across isolates, CLSI lines, points with |modified_z| > LABEL_Z_THRESHOLD labeled by NR."""
     out_dir.mkdir(parents=True, exist_ok=True)
     paths = []
-    for antibiotic, group in outliers_df.groupby("antibiotic"):
+    for antibiotic_key, group in outliers_df.groupby("antibiotic"):
+        antibiotic = str(antibiotic_key)
         group = group.sort_values(["log2_mic", "NR"])
         fig, ax = plt.subplots(figsize=(7, 4.2))
         jitter = _tie_spread(group["log2_mic"]).to_numpy()
@@ -78,7 +79,7 @@ def plot_antibiotic_distributions(outliers_df: pd.DataFrame, out_dir: Path) -> l
 
         label_x, label_y, texts = [], [], []
         for _, row in group[group["modified_z"].abs() > LABEL_Z_THRESHOLD].iterrows():
-            y = jitter[group.index.get_loc(row.name)]
+            y = float(jitter[group.index.get_loc(row.name)])
             label_x.append(row["log2_mic"])
             label_y.append(y)
             texts.append(ax.text(row["log2_mic"], y, str(int(row["NR"])), fontsize=7, color="#333333"))
@@ -202,7 +203,8 @@ def plot_mgit_category_counts(summary_df: pd.DataFrame, out_dir: Path) -> list[P
     """One stacked bar chart per antibiotic: ERG category counts by tested concentration."""
     out_dir.mkdir(parents=True, exist_ok=True)
     paths = []
-    for antibiotic, group in summary_df.groupby("antibiotic"):
+    for antibiotic_key, group in summary_df.groupby("antibiotic"):
+        antibiotic = str(antibiotic_key)
         group = group.sort_values("concentration_mg_l")
         fig, ax = plt.subplots(figsize=(6, 3.2))
         x = np.arange(len(group))
@@ -290,7 +292,7 @@ def plot_overview_table(overview_df: pd.DataFrame, title: str, out_path: Path, f
     ax.axis("off")
     fig.subplots_adjust(left=0.01, right=0.99, top=0.88, bottom=0.04)
     table = ax.table(
-        cellText=overview_df.astype(str).values,
+        cellText=overview_df.astype(str).to_numpy().tolist(),
         colLabels=_OVERVIEW_HEADERS,
         cellLoc="center",
         loc="upper center",
@@ -308,7 +310,7 @@ def plot_overview_table(overview_df: pd.DataFrame, title: str, out_path: Path, f
             cell.set_height(cell.get_height() * 1.5)
         elif col == 0:
             cell.set_text_props(weight="bold", ha="left")
-            cell._loc = "left"
+            cell._loc = "left"  # type: ignore[attr-defined]  # no public setter for cell alignment
         elif row % 2 == 0:
             cell.set_facecolor("#F5F5F5")
     ax.set_title(title, fontsize=12, weight="bold")
@@ -323,7 +325,8 @@ def plot_mgit_mic_counts(mic_counts_df: pd.DataFrame, out_dir: Path) -> list[Pat
     """One bar chart per antibiotic: MIC (lowest S concentration) on x, isolate count on y."""
     out_dir.mkdir(parents=True, exist_ok=True)
     paths = []
-    for antibiotic, group in mic_counts_df.groupby("antibiotic"):
+    for antibiotic_key, group in mic_counts_df.groupby("antibiotic"):
+        antibiotic = str(antibiotic_key)
         fig, ax = plt.subplots(figsize=(6, 3.4))
         x = np.arange(len(group))
         colors = [BREAKPOINT_R_COLOR if np.isnan(v) else POINT_COLOR for v in group["mic_mg_l"]]

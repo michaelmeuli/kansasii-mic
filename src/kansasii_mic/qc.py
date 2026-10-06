@@ -25,7 +25,7 @@ def find_flat_profile_runs(long_df: pd.DataFrame) -> pd.DataFrame:
 
     Includes an ``exclusion_reason`` column explaining the flagged run.
     """
-    flagged_parts = []
+    flagged_parts: list[pd.DataFrame] = []
     for tnr, group in long_df.groupby("TNR", sort=False):
         values = group["point_estimate"].tolist()
         idx = group.index.tolist()

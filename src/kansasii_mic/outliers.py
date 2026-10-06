@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 import numpy as np
 import pandas as pd
 
@@ -11,7 +13,8 @@ MEANAD_SCALE = 1.253314  # consistency constant so mean absolute deviation appro
 
 
 def _tukey_fences(values: pd.Series) -> tuple[float, float, float, float]:
-    q1, q3 = values.quantile([0.25, 0.75])
+    quartiles = values.quantile([0.25, 0.75])
+    q1, q3 = float(quartiles.iloc[0]), float(quartiles.iloc[1])
     iqr = q3 - q1
     return q1, q3, q1 - 1.5 * iqr, q3 + 1.5 * iqr
 
@@ -21,20 +24,22 @@ def per_antibiotic_outliers(clean_df: pd.DataFrame) -> pd.DataFrame:
 
     Also attaches the CLSI category (S/I/R/None) for cross-reference.
     """
-    results = []
-    for antibiotic, group in clean_df.groupby("antibiotic"):
+    results: list[dict[str, object]] = []
+    for antibiotic_key, group in clean_df.groupby("antibiotic"):
+        antibiotic = str(antibiotic_key)
         q1, q3, lower_fence, upper_fence = _tukey_fences(group["log2_mic"])
         median = group["log2_mic"].median()
         # Mean (not median) absolute deviation: MIC data is discrete and often
         # >50% tied at the median, which makes MAD 0 and the z-score undefined.
         scale = (group["log2_mic"] - median).abs().mean() * MEANAD_SCALE
         for row in group.itertuples(index=False):
+            log2_mic = cast(float, row.log2_mic)
             direction = None
-            if row.log2_mic < lower_fence:
+            if log2_mic < lower_fence:
                 direction = "more_susceptible"
-            elif row.log2_mic > upper_fence:
+            elif log2_mic > upper_fence:
                 direction = "more_resistant"
-            modified_z = (row.log2_mic - median) / scale if scale > 0 else np.nan
+            modified_z = (log2_mic - median) / scale if scale > 0 else np.nan
             results.append(
                 {
                     "NR": row.NR,
@@ -49,7 +54,7 @@ def per_antibiotic_outliers(clean_df: pd.DataFrame) -> pd.DataFrame:
                     "tukey_lower_fence": lower_fence,
                     "tukey_upper_fence": upper_fence,
                     "outlier_direction": direction,
-                    "clsi_category": categorize(antibiotic, row.point_estimate),
+                    "clsi_category": categorize(antibiotic, cast(float, row.point_estimate)),
                     "lab_erg": row.erg,
                 }
             )
@@ -76,7 +81,10 @@ def tnr_resistance_ranking(outliers_df: pd.DataFrame) -> pd.DataFrame:
             }
         )
 
-    ranking = outliers_df.groupby("TNR").apply(_agg, include_groups=False).reset_index()
+    ranking: pd.DataFrame = (
+        outliers_df.groupby("TNR").apply(_agg, include_groups=False)  # type: ignore[call-overload]  # stubs lack include_groups
+        .reset_index()
+    )
     ranking = ranking.sort_values("mean_modified_z", ascending=False).reset_index(drop=True)
     ranking["rank_most_resistant"] = ranking.index + 1
     return ranking

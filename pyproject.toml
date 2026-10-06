@@ -10,3 +10,13 @@ requires-python = ">=3.10"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.mypy]
+strict = true
+python_version = "3.11"
+mypy_path = "src"
+files = ["src", "scripts", "tests"]
+
+[[tool.mypy.overrides]]
+module = ["adjustText"]
+ignore_missing_imports = true

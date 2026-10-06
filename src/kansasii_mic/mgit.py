@@ -18,7 +18,7 @@ ERG_CATEGORIES = ["S", "I", "R", "K", "U"]
 
 def mgit_summary(mgit_long_df: pd.DataFrame) -> pd.DataFrame:
     """Per antibiotic x tested concentration: counts of each ERG category."""
-    counts = (
+    counts: pd.DataFrame = (
         mgit_long_df.groupby(["antibiotic", "concentration_mg_l"])["erg"]
         .value_counts()
         .unstack("erg", fill_value=0)
@@ -49,7 +49,10 @@ def tnr_mgit_resistance_ranking(mgit_long_df: pd.DataFrame) -> pd.DataFrame:
             }
         )
 
-    ranking = mgit_long_df.groupby("TNR").apply(_agg, include_groups=False).reset_index()
+    ranking: pd.DataFrame = (
+        mgit_long_df.groupby("TNR").apply(_agg, include_groups=False)  # type: ignore[call-overload]  # stubs lack include_groups
+        .reset_index()
+    )
     ranking = ranking.sort_values("n_R", ascending=False).reset_index(drop=True)
     ranking["rank_most_resistant"] = ranking.index + 1
     return ranking
@@ -71,5 +74,5 @@ def filter_int_erg_i_or_r(mgit_long_df: pd.DataFrame) -> pd.DataFrame:
         .sort_values("concentration_mg_l")
         .drop_duplicates(subset=["TNR", "antibiotic"], keep="last")
     )
-    result = pd.concat([subset[~is_r], r_highest])
+    result: pd.DataFrame = pd.concat([subset[~is_r], r_highest])
     return result.sort_values(["TNR", "antibiotic", "concentration_mg_l"]).reset_index(drop=True)
