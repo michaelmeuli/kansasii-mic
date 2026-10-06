@@ -1,0 +1,12 @@
+# Always use LF in the working tree (also on Windows checkouts).
+* text=auto eol=lf
+*.sh text eol=lf
+*.sbatch text eol=lf
+*.nf text eol=lf
+Singularity text eol=lf
+
+*.png binary
+*.jpg binary
+*.gz binary
+*.img binary
+*.pdf binary
