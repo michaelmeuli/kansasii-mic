@@ -59,7 +59,7 @@ def _lookup_screening_map(
 
     screening_map_link.csv is the source of truth for which isolates are in
     scope: a row is kept only if its TNR matches any of screening_map's TNR
-    columns (TNR, TNR_NGS, TNR3-6), or -- for a TNR recorded there as a superseded/duplicate id --
+    columns (TNR, TNR_JC, TNR_MM, TNR3-6), or -- for a TNR recorded there as a superseded/duplicate id --
     screening_map's MHK column. On an MHK-column match, the row's TNR is
     replaced by screening_map's canonical TNR for that isolate (the
     returned Series' ``TNR`` field).
@@ -174,7 +174,7 @@ def _match_screening_map_mgit(
 
 # Every screening_map_link.csv column holding a TNR of the row's isolate:
 # TNR is the primary one, the others are further samples of the same isolate.
-SCREENING_MAP_TNR_COLUMNS = ("TNR", "TNR_NGS", "TNR3", "TNR4", "TNR5", "TNR6")
+SCREENING_MAP_TNR_COLUMNS = ("TNR", "TNR_JC", "TNR_MM", "TNR3", "TNR4", "TNR5", "TNR6")
 
 
 def _load_smap_indexes(screening_map_csv: Path) -> tuple[pd.DataFrame, pd.DataFrame]:

@@ -27,7 +27,7 @@ and overall, with results checked against CLSI reference breakpoints for
 
 **Joining the two files** (`src/kansasii_mic/loading.py`): a `mic.csv` row
 is kept only if its `TNR` matches any of screening_map_link's TNR columns
-(`TNR`, `TNR_NGS`, `TNR3`-`TNR6`) or, failing that, its `MHK` column -- screening_map defines which isolates are in
+(`TNR`, `TNR_JC`, `TNR_MM`, `TNR3`-`TNR6`) or, failing that, its `MHK` column -- screening_map defines which isolates are in
 scope, so rows matching neither are dropped. On an `MHK`-column match, the
 row's `TNR` is replaced with screening_map's canonical `TNR` for that
 isolate. The resulting long-format table carries `NR`, `PROBENNUMMER`,

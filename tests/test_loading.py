@@ -8,10 +8,10 @@ from kansasii_mic.loading import load_mic_long
 def _write(tmp_path: Path) -> tuple[Path, Path]:
     link = tmp_path / "link.csv"
     link.write_text(
-        "NR,PROBENNUMMER,LNR,LNR2,TNR,TNR_NGS,TNR3,TNR4,TNR5,TNR6,NGS,MHK,LABEL\n"
-        "1,P1,1,,100,,,,,,,,\n"
-        "2,P2,2,,200,201,,,,,,,\n"
-        "3,P3,3,,300,,,,,,,301,\n"
+        "NR,PROBENNUMMER,LNR,LNR2,TNR,TNR_JC,NGS_JC,TNR_MM,NGS_MM,TNR3,TNR4,TNR5,TNR6,MHK,LABEL\n"
+        "1,P1,1,,100,,,,,,,,,,\n"
+        "2,P2,2,,200,201,,,,,,,,,\n"
+        "3,P3,3,,300,,,,,,,,,301,\n"
     )
     mic = tmp_path / "mic.csv"
     mic.write_text(

@@ -11,7 +11,7 @@ outputs. This file only lists what is easy to get wrong.
 - **Screening map is `data/imm/screening_map_link.csv`** (built by
   `immensekansasii/scripts/screening_map_link.py`); the old `screening_map.csv`
   is superseded. A `mic.csv` TNR matches any of `SCREENING_MAP_TNR_COLUMNS`
-  (`TNR`, `TNR_NGS`, `TNR3`-`TNR6`), then the map's `MHK` column. The output
+  (`TNR`, `TNR_JC`, `TNR_MM`, `TNR3`-`TNR6`), then the map's `MHK` column. The output
   `TNR` is always the isolate's primary `TNR`. The map's `MHK` column is
   unrelated to `mic.csv`'s `MHK` (the MIC reading).
 - **Outputs are on the shares, not in the repo:**
