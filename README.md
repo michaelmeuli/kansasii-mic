@@ -15,7 +15,7 @@ and overall, with results checked against CLSI reference breakpoints for
   a fixed test concentration (e.g. `"Amikacin 4 mg/l"`) are single-point
   breakpoint tests and never carry an `MHK` value -- **this analysis only
   uses rows with a non-empty `MHK`**, per the intended scope.
-- `data/imm/screening_map_link.csv` (supersedes `screening_map.csv`; built by `immensekansasii/scripts/screening_map_link.py`) -- links `TNR` to sample/sequencing IDs and
+- `data/imm/screening_map_link.csv` (supersedes `screening_map.csv`; built by `immensekansasii/scripts/02_screening_map_link.py`) -- links `TNR` to sample/sequencing IDs and
   marks reference/control-strain rows (`LABEL`), including
   `M. kansasii (ATCC 12478)`. That control row has no `TNR`/MIC data of
   its own in this export, so it cannot serve as an in-dataset QC
@@ -200,11 +200,3 @@ rsync -a --exclude work --exclude .nextflow /shares/sander.imm.uzh/MM/kansasii/r
   `KANSASII_ROOT` environment variable to point elsewhere (e.g. a mapped drive).
 - Nextflow, Singularity and sbatch steps only run on the cluster (or WSL).
 
-## Windows checkout
-
-- `.gitattributes` forces LF line endings, so a Windows checkout (even with
-  `core.autocrlf=true`) keeps scripts runnable. Recommended: `git config core.autocrlf false`
-  and `git config core.longpaths true`.
-- Scripts default to the cluster root `/shares/sander.imm.uzh/MM/kansasii`; set the
-  `KANSASII_ROOT` environment variable to point elsewhere (e.g. a mapped drive).
-- Nextflow, Singularity and sbatch steps only run on the cluster (or WSL).

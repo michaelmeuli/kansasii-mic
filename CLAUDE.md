@@ -9,7 +9,7 @@ outputs. This file only lists what is easy to get wrong.
   `module load miniforge3` and `conda activate kansasii_mic`. Run tests with
   `pytest tests/`. Set `MPLBACKEND=Agg` when running headless.
 - **Screening map is `data/imm/screening_map_link.csv`** (built by
-  `immensekansasii/scripts/screening_map_link.py`); the old `screening_map.csv`
+  `immensekansasii/scripts/02_screening_map_link.py`); the old `screening_map.csv`
   is superseded. A `mic.csv` TNR matches any of `SCREENING_MAP_TNR_COLUMNS`
   (`TNR`, `TNR_JC`, `TNR_MM`, `TNR3`-`TNR6`), then the map's `MHK` column. The output
   `TNR` is always the isolate's primary `TNR`. The map's `MHK` column is
@@ -26,5 +26,5 @@ outputs. This file only lists what is easy to get wrong.
 - **Two parallel pipelines** share the same screening-map matching:
   MHK broth-microdilution rows (numeric MIC) and MGIT breakpoint rows
   (labels like `"Amikacin 4 mg/l"`, categorical, empty MHK). Don't mix them.
-- **`scripts/run.sh`** is a Windows/PowerShell scratch log (uv venv, scp to the
-  cluster), not a runnable bash script.
+- **`scripts/windows_notes.ps1`** is a Windows/PowerShell scratch log (uv venv, scp to the
+  cluster), not a runnable script. The real entry point is `scripts/run_analysis.py`.
