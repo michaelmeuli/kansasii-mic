@@ -312,7 +312,7 @@ def load_ast_jc_long(
     """
     wide = pd.read_csv(ast_jc_csv, dtype=str, keep_default_na=False)
     wide.columns = [c.strip() for c in wide.columns]
-    unknown = [c for c in wide.columns if c != "TNR" and c not in AST_JC_ANTIBIOTIC]
+    unknown = [c for c in wide.columns if c not in ("TNR", "NR_JC") and c not in AST_JC_ANTIBIOTIC]
     if unknown:
         raise ValueError(f"unknown drug columns in {ast_jc_csv.name}: {unknown}")
 
