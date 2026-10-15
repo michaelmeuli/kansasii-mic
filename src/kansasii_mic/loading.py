@@ -246,3 +246,95 @@ def load_mgit_long(mic_csv: Path, screening_map_csv: Path) -> tuple[pd.DataFrame
 
     smap_by_tnr, smap_by_mhk = _load_smap_indexes(screening_map_csv)
     return _match_screening_map_mgit(subset, smap_by_tnr, smap_by_mhk)
+
+
+# screening_map_ast_jc.csv: wide MIC table of the jc-sequenced isolates (TNR + one column per drug).
+# Column abbreviation -> ANTIBIOTIKA label as used in mic.csv (then canonicalized like mic.csv rows).
+AST_JC_ANTIBIOTIC = {
+    "AMI": "Amikacin",
+    "CLR": "Clarithromycin",
+    "EMB": "Ethambutol",
+    "INH": "Isoniazid",
+    "MXF": "Moxifloxacin",
+    "RIF": "Rifampicin",
+    "SXT": "Trimethoprim/Sulfamethoxazol",
+    "CIP": "Ciprofloxacin",
+    "DOX": "Doxycyclin",
+    "ETH": "Ethionamid",
+    "LZD": "Linezolid",
+    "RFB": "Rifabutin",
+    "STR": "Streptomycin",
+}
+
+# Values in the table are rounded (0.1, 0.13, 0.3, ...); snap them to the 2-fold dilution series used in mic.csv.
+_AST_JC_SNAP = {"0.1": "0.12", "0.125": "0.12", "0.13": "0.12", "0.3": "0.25"}
+_AST_JC_SNAP_ETH = {"0.2": "0.15"}  # ethionamide has its own series 0.15, 0.3, 0.6, 1.2, 2.5, 5, 10
+# Sulfamethoxazole/Trimethoprim is tested at a fixed 1:19 ratio; the denominators in the file run 2.38, 2.39,
+# 2.40 ... (fill-down artifact), so rebuild them from the (snapped) numerator.
+_SXT_DENOMINATOR = {"0.06": "1.19", "0.12": "2.38", "0.25": "4.75", "0.5": "9.5", "1": "19", "2": "38", "4": "76", "8": "152"}
+_SXT_RE = re.compile(r"^(?P<prefix><=|>=|<|>)?(?P<num>[0-9.]+)/(?P<denom>[0-9.]+)$")
+
+
+def _fmt_number(text: str) -> str:
+    return f"{float(text):g}"
+
+
+def snap_ast_jc_value(abbreviation: str, raw: str) -> str:
+    """Snap a rounded value of screening_map_ast_jc.csv to the dilution series (see ``_AST_JC_SNAP``).
+
+    Censoring prefixes are kept; values that are not plain numbers (``<64``) pass through the same path.
+    """
+    text = raw.strip()
+    if abbreviation == "SXT":
+        m = _SXT_RE.match(text)
+        if m:
+            num = _fmt_number(_AST_JC_SNAP.get(m["num"], m["num"]))
+            if num not in _SXT_DENOMINATOR:
+                raise MicParseError(f"SXT numerator {num!r} not in the 1:19 dilution series: {raw!r}")
+            return f"{m['prefix'] or ''}{num}/{_SXT_DENOMINATOR[num]}"
+    m = re.match(r"^(?P<prefix><=|>=|<|>)?(?P<num>[0-9.]+)$", text)
+    if not m:
+        return text
+    snap = _AST_JC_SNAP_ETH if abbreviation == "ETH" else _AST_JC_SNAP
+    num = m["num"]
+    return f"{m['prefix'] or ''}{_fmt_number(snap.get(_fmt_number(num), num))}"
+
+
+def load_ast_jc_long(
+    ast_jc_csv: Path, screening_map_csv: Path, have_panel: set[str]
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Return (parsed_long_df, parse_failures_df) for screening_map_ast_jc.csv.
+
+    The wide table is melted to the mic.csv layout and parsed/matched like mic.csv panel rows (its TNR is a
+    ``TNR_JC`` of screening_map_link.csv). Isolates whose PROBENNUMMER is in ``have_panel`` (already measured
+    in mic.csv, with values 1-2 dilutions apart) are skipped: mic.csv wins. Result rows carry
+    ``source == "ast_jc"`` and empty INT_ERG/ERG.
+    """
+    wide = pd.read_csv(ast_jc_csv, dtype=str, keep_default_na=False)
+    wide.columns = [c.strip() for c in wide.columns]
+    unknown = [c for c in wide.columns if c != "TNR" and c not in AST_JC_ANTIBIOTIC]
+    if unknown:
+        raise ValueError(f"unknown drug columns in {ast_jc_csv.name}: {unknown}")
+
+    rows = []
+    snap_failures = []
+    for rec in wide.to_dict("records"):
+        for abbr, label in AST_JC_ANTIBIOTIC.items():
+            value = rec.get(abbr, "").strip()
+            if not value:
+                continue
+            try:
+                value = snap_ast_jc_value(abbr, value)
+            except MicParseError as exc:
+                snap_failures.append({"TNR": rec["TNR"], "ANTIBIOTIKA": label, "MHK": value, "error": str(exc)})
+                continue
+            rows.append({"TNR": rec["TNR"], "ANTIBIOTIKA": label, "MHK": value, "INT_ERG": "", "ERG": ""})
+    subset = pd.DataFrame(rows, columns=["TNR", "ANTIBIOTIKA", "MHK", "INT_ERG", "ERG"]).astype({"TNR": "Int64"})
+
+    smap_by_tnr, smap_by_mhk = _load_smap_indexes(screening_map_csv)
+    long_df, failures_df = _match_screening_map_and_parse(subset, smap_by_tnr, smap_by_mhk)
+    if snap_failures:
+        failures_df = pd.concat([failures_df, pd.DataFrame(snap_failures)], ignore_index=True)
+    long_df = long_df[~long_df["PROBENNUMMER"].isin(have_panel)].copy()
+    long_df["source"] = "ast_jc"
+    return long_df.reset_index(drop=True), failures_df

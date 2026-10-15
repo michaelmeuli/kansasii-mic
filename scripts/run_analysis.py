@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from kansasii_mic.loading import load_mgit_long, load_mic_long
+from kansasii_mic.loading import load_ast_jc_long, load_mgit_long, load_mic_long
 from kansasii_mic.mgit import filter_int_erg_i_or_r, mgit_summary, tnr_mgit_resistance_ranking
 from kansasii_mic.overview import mgit_mic_counts, mgit_overview, mhk_mic_counts, mhk_overview
 from kansasii_mic.outliers import per_antibiotic_outliers, tnr_resistance_ranking
@@ -129,12 +129,24 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mic-csv", type=Path, required=True)
     parser.add_argument("--screening-map", type=Path, required=True, help="screening_map_link.csv")
+    parser.add_argument(
+        "--ast-jc",
+        type=Path,
+        default=None,
+        help="screening_map_ast_jc.csv (wide jc MIC table); adds isolates without MHK-panel data in mic.csv",
+    )
     parser.add_argument("--out-dir", type=Path, required=True)
     args = parser.parse_args()
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
     long_df, failures_df = load_mic_long(args.mic_csv, args.screening_map)
+    long_df["source"] = "mic.csv"
+    if args.ast_jc is not None:
+        jc_df, jc_failures_df = load_ast_jc_long(args.ast_jc, args.screening_map, set(long_df["PROBENNUMMER"]))
+        print(f"[MHK] ast_jc: {len(jc_df)} rows, {jc_df['PROBENNUMMER'].nunique()} isolates added")
+        long_df = pd.concat([long_df, jc_df], ignore_index=True)
+        failures_df = pd.concat([failures_df, jc_failures_df], ignore_index=True)
     _run_pipeline(long_df, failures_df, args.out_dir / "mhk", "MHK")
 
     mgit_long_df, mgit_failures_df = load_mgit_long(args.mic_csv, args.screening_map)

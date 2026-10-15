@@ -16,6 +16,9 @@ outputs. This file only lists what is easy to get wrong.
   unrelated to `mic.csv`'s `MHK` (the MIC reading). `MHK_TNR_DIFFERS = yes`
   in the map (MHK made under another TNR than the sequenced one) is informational
   only: such rows are still matched via the `MHK` column.
+- **`--ast-jc`** (`screening_map_ast_jc.csv`, wide jc MIC table, loader `load_ast_jc_long`): adds MHK-panel rows
+  for isolates without mic.csv panel data only (`source` column); values snapped to the dilution series
+  (`snap_ast_jc_value`). Linked via `TNR_JC`; flag `MIC_JC` in the link table.
 - **Outputs are on the shares, not in the repo:**
   `/shares/sander.imm.uzh/MM/kansasii/output/mic/` (`mhk/` and `mgit/`).
   Before a rerun, empty that directory first so no stale figures remain.
