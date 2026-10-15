@@ -60,7 +60,8 @@ def _lookup_screening_map(
     screening_map_link.csv is the source of truth for which isolates are in
     scope: a row is kept only if its TNR matches any of screening_map's TNR
     columns (TNR, TNR_JC, TNR_MM, TNR3-6), or -- for a TNR recorded there as a superseded/duplicate id --
-    screening_map's MHK column. On an MHK-column match, the row's TNR is
+    screening_map's MHK column (ignored for rows with ``MHK_TNR_DIFFERS == "yes"``: that MHK was made
+    under another TNR than the sequenced one). On an MHK-column match, the row's TNR is
     replaced by screening_map's canonical TNR for that isolate (the
     returned Series' ``TNR`` field).
 
@@ -207,8 +208,13 @@ def _load_smap_indexes(screening_map_csv: Path) -> tuple[pd.DataFrame, pd.DataFr
         print(f"WARNING: TNR(s) shared by different isolates in {screening_map_csv.name}: {keys}")
     smap_by_tnr = by_tnr_all.drop_duplicates(subset="_key", keep="first").set_index("_key")
     smap_by_tnr.index.name = None
+    # An MHK made under another TNR than the sequenced one (MHK_TNR_DIFFERS == "yes", e.g. a contaminated
+    # follow-up culture) must not be attributed to this isolate.
+    mhk_rows = smap
+    if "MHK_TNR_DIFFERS" in smap:
+        mhk_rows = smap[smap["MHK_TNR_DIFFERS"].fillna("") != "yes"]
     smap_by_mhk = (
-        smap.dropna(subset=["MHK"]).drop_duplicates(subset="MHK", keep="first").set_index("MHK", drop=False)[smap_cols]
+        mhk_rows.dropna(subset=["MHK"]).drop_duplicates(subset="MHK", keep="first").set_index("MHK", drop=False)[smap_cols]
     )
     return smap_by_tnr, smap_by_mhk
 

@@ -29,3 +29,14 @@ def test_matches_all_tnr_columns_and_mhk(tmp_path: Path) -> None:
     df, _ = load_mic_long(mic, link)
     assert sorted(df["PROBENNUMMER"]) == ["P1", "P2", "P3"]
     assert sorted(df["TNR"]) == [100, 200, 300]
+
+
+def test_mhk_made_under_other_tnr_is_not_attributed(tmp_path: Path) -> None:
+    mic, link = _write(tmp_path)
+    link.write_text(
+        "NR,PROBENNUMMER,LNR,LNR2,TNR,TNR_JC,NGS_JC,TNR_MM,NGS_MM,TNR3,TNR4,TNR5,TNR6,TNR_MHK,MHK,MHK_TNR_DIFFERS,LABEL\n"
+        "1,P1,1,,100,,,,,,,,,100,,,\n"
+        "3,P3,3,,300,,,,,,,,,350,301,yes,\n"
+    )
+    df, _ = load_mic_long(mic, link)
+    assert sorted(df["PROBENNUMMER"]) == ["P1"]

@@ -13,7 +13,9 @@ outputs. This file only lists what is easy to get wrong.
   is superseded. A `mic.csv` TNR matches any of `SCREENING_MAP_TNR_COLUMNS`
   (`TNR`, `TNR_JC`, `TNR_MM`, `TNR3`-`TNR6`), then the map's `MHK` column. The output
   `TNR` is always the isolate's primary `TNR`. The map's `MHK` column is
-  unrelated to `mic.csv`'s `MHK` (the MIC reading).
+  unrelated to `mic.csv`'s `MHK` (the MIC reading). Rows with
+  `MHK_TNR_DIFFERS = yes` (MHK made under another TNR, only Mkan329-056) are
+  excluded from the `MHK`-column match.
 - **Outputs are on the shares, not in the repo:**
   `/shares/sander.imm.uzh/MM/kansasii/output/mic/` (`mhk/` and `mgit/`).
   Before a rerun, empty that directory first so no stale figures remain.

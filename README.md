@@ -30,7 +30,11 @@ is kept only if its `TNR` matches any of screening_map_link's TNR columns
 (`TNR`, `TNR_JC`, `TNR_MM`, `TNR3`-`TNR6`) or, failing that, its `MHK` column -- screening_map defines which isolates are in
 scope, so rows matching neither are dropped. On an `MHK`-column match, the
 row's `TNR` is replaced with screening_map's canonical `TNR` for that
-isolate. The resulting long-format table carries `NR`, `PROBENNUMMER`,
+isolate. The `MHK`-column match is skipped for rows with `MHK_TNR_DIFFERS = yes`
+in screening_map_link (the MHK was made under another TNR than the sequenced
+one, currently only Mkan329-056: its MHK 2023311034 belongs to the
+contaminated follow-up culture 2022500349, whose resequenced reads are not
+used). The resulting long-format table carries `NR`, `PROBENNUMMER`,
 `TNR` and `MHK` from screening_map alongside the parsed MIC fields;
 the per-antibiotic distribution plots label outlier points (|modified_z| > 1.0),
 and the heatmaps and ranking plots label isolates, by `NR` (the integer isolate
