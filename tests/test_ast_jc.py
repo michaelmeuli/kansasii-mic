@@ -15,7 +15,7 @@ from kansasii_mic.parsing import MicParseError
         ("CLR", "0.3", "0.25"),
         ("AMI", "2.0", "2"),
         ("AMI", "32.0", "32"),
-        ("STR", "<64", "<64"),
+        ("STR", ">64", ">64"),
         ("ETH", "0.2", "0.15"),
         ("ETH", "0.3", "0.3"),
         ("ETH", "1.2", "1.2"),
@@ -46,7 +46,7 @@ def _write(tmp_path: Path) -> tuple[Path, Path]:
     ast.write_text(
         "TNR,AMI,CLR,EMB,INH,MXF ,RIF,SXT,CIP,DOX,ETH,LZD,RFB,STR\n"
         "100,1,0.12,2,2,0.1,0.1,>0.12/2.40,1,1,0.2,1,0.13,2\n"
-        "201,2.0,0.3,4.0,4,0.12,0.25,0.25/4.76,2,4,0.3,2,0.25,<64\n"
+        "201,2.0,0.3,4.0,4,0.12,0.25,0.25/4.76,2,4,0.3,2,0.25,>64\n"
         "999,1,1,1,1,1,1,1/19,1,1,0.3,1,0.25,1\n"
     )
     return ast, link
@@ -62,7 +62,7 @@ def test_load_ast_jc_long(tmp_path: Path) -> None:
     p2 = df[df["PROBENNUMMER"] == "P2"].set_index("antibiotic")
     assert p2.loc["Sulfamethoxazole/Trimethoprim", "mhk_parsed"] == "0.25/4.75"
     assert p2.loc["Amikacin", "mhk_parsed"] == "2"
-    assert p2.loc["Streptomycin", "mhk_parsed"] == "<64"
+    assert p2.loc["Streptomycin", "mhk_parsed"] == ">64"
 
 
 def test_isolates_with_panel_data_are_skipped(tmp_path: Path) -> None:
