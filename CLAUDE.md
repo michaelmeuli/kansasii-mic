@@ -27,4 +27,4 @@ outputs. This file only lists what is easy to get wrong.
   MHK broth-microdilution rows (numeric MIC) and MGIT breakpoint rows
   (labels like `"Amikacin 4 mg/l"`, categorical, empty MHK). Don't mix them.
 - **`scripts/windows_notes.ps1`** is a Windows/PowerShell scratch log (uv venv, scp to the
-  cluster), not a runnable script. The real entry point is `scripts/run_analysis.py`.
+  cluster), not a runnable script. The real entry point is `scripts/01_run_analysis.py`.

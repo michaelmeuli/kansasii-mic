@@ -4,10 +4,14 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 import pandas as pd
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # kansasii_paths.py sits next to this script
+
+from kansasii_paths import MIC_CSV, OUTPUT_ROOT, SCREENING_MAP_AST_JC, SCREENING_MAP_LINK  # noqa: E402
 from kansasii_mic.loading import load_ast_jc_long, load_mgit_long, load_mic_long
 from kansasii_mic.mgit import filter_int_erg_i_or_r, mgit_summary, tnr_mgit_resistance_ranking
 from kansasii_mic.overview import mgit_mic_counts, mgit_overview, mhk_mic_counts, mhk_overview
@@ -127,22 +131,23 @@ def _run_mgit_pipeline(mgit_long_df: pd.DataFrame, mgit_failures_df: pd.DataFram
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mic-csv", type=Path, required=True)
-    parser.add_argument("--screening-map", type=Path, required=True, help="screening_map_link.csv")
+    parser.add_argument("--mic-csv", type=Path, default=MIC_CSV)
+    parser.add_argument("--screening-map", type=Path, default=SCREENING_MAP_LINK, help="screening_map_link.csv")
     parser.add_argument(
         "--ast-jc",
         type=Path,
-        default=None,
+        default=SCREENING_MAP_AST_JC,
         help="screening_map_ast_jc.csv (wide jc MIC table); adds isolates without MHK-panel data in mic.csv",
     )
-    parser.add_argument("--out-dir", type=Path, required=True)
+    parser.add_argument("--no-ast-jc", action="store_true", help="do not add the jc table")
+    parser.add_argument("--out-dir", type=Path, default=OUTPUT_ROOT / "mic", help="writes mhk/ and mgit/ below it")
     args = parser.parse_args()
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
     long_df, failures_df = load_mic_long(args.mic_csv, args.screening_map)
     long_df["source"] = "mic.csv"
-    if args.ast_jc is not None:
+    if not args.no_ast_jc:
         jc_df, jc_failures_df = load_ast_jc_long(args.ast_jc, args.screening_map, set(long_df["PROBENNUMMER"]))
         print(f"[MHK] ast_jc: {len(jc_df)} rows, {jc_df['PROBENNUMMER'].nunique()} isolates added")
         long_df = pd.concat([long_df, jc_df], ignore_index=True)

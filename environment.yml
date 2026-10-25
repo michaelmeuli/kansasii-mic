@@ -1,4 +1,4 @@
-name: kansasii_mic
+name: env_mic
 channels:
   - conda-forge
 dependencies:

@@ -128,7 +128,7 @@ conda activate kansasii_mic
 
 pytest tests/
 
-python scripts/run_analysis.py \
+python scripts/01_run_analysis.py \
   --mic-csv /shares/sander.imm.uzh/MM/kansasii/data/imm/mic.csv \
   --screening-map /shares/sander.imm.uzh/MM/kansasii/data/imm/screening_map_link.csv \
   --ast-jc /shares/sander.imm.uzh/MM/kansasii/data/imm/screening_map_ast_jc.csv \
