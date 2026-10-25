@@ -124,18 +124,17 @@ before drawing conclusions.
 ```bash
 module load miniforge3
 conda env create -f environment.yml   # first time only
-conda activate kansasii_mic
+conda activate env_mic
 
 pytest tests/
 
-python scripts/01_run_analysis.py \
-  --mic-csv /shares/sander.imm.uzh/MM/kansasii/data/imm/mic.csv \
-  --screening-map /shares/sander.imm.uzh/MM/kansasii/data/imm/screening_map_link.csv \
-  --ast-jc /shares/sander.imm.uzh/MM/kansasii/data/imm/screening_map_ast_jc.csv \
-  --out-dir /shares/sander.imm.uzh/MM/kansasii/output/mic
+python scripts/01_run_analysis.py   # all four paths default to the shared constants:
+#   --mic-csv MIC_CSV  --screening-map SCREENING_MAP_LINK  --ast-jc SCREENING_MAP_AST_JC  --out-dir OUTPUT_ROOT/mic
+#   (data/imm/*.csv and output/mic); --no-ast-jc leaves the jc table out
+sbatch submit_mic.sbatch            # tests, then the analysis, then MANIFEST.txt in output/mic (what run_downstream.sh submits)
 ```
 
-`--ast-jc` is optional. `screening_map_ast_jc.csv` is a wide MIC table (one column per drug, abbreviations
+`--no-ast-jc` leaves the jc table out. `screening_map_ast_jc.csv` is a wide MIC table (one column per drug, abbreviations
 AMI, CLR, EMB, INH, MXF, RIF, SXT, CIP, DOX, ETH, LZD, RFB, STR) for the jc-sequenced isolates; its `TNR` is
 a `TNR_JC` of screening_map_link (flag column `MIC_JC`). It is melted to the mic.csv layout and added to the
 `mhk/` analysis (`mic_parsed.csv` gets a `source` column: `mic.csv` / `ast_jc`) **only for isolates that have

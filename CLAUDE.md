@@ -6,7 +6,7 @@ outputs. This file only lists what is easy to get wrong.
 - **Git:** commit and push directly to `main` (remote `origin`,
   `git@github.com:michaelmeuli/kansasii-mic.git`). No feature branches or PRs.
 - **Environment:** the system `python3` has no pandas. Use
-  `module load miniforge3` and `conda activate kansasii_mic`. Run tests with
+  `module load miniforge3` and `conda activate env_mic` (renamed from `kansasii_mic` 2026-10-25 to match the other repos; the old env can be deleted). Run tests with
   `pytest tests/`. Set `MPLBACKEND=Agg` when running headless.
 - **Screening map is `data/imm/screening_map_link.csv`** (built by
   `immensekansasii/scripts/02_screening_map_link.py`); the old `screening_map.csv`
@@ -28,3 +28,4 @@ outputs. This file only lists what is easy to get wrong.
   (labels like `"Amikacin 4 mg/l"`, categorical, empty MHK). Don't mix them.
 - **`scripts/windows_notes.ps1`** is a Windows/PowerShell scratch log (uv venv, scp to the
   cluster), not a runnable script. The real entry point is `scripts/01_run_analysis.py`.
+- **Paths:** `scripts/kansasii_paths.py` is a vendored copy of `kansasii-docs/templates/kansasii_paths.py` (never edit it here; `bash repos/check_sync.sh --fix`). `scripts/01_run_analysis.py` defaults its inputs to those constants; the package `src/kansasii_mic` does no path handling.
