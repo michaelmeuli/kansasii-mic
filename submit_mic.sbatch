@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# Tests, then the MIC outlier analysis (MHK and MGIT) -> output/mic/{mhk,mgit}/ (figures start from empty directories).
+# Tests, then the MIC outlier analysis (MHK and MGIT) -> output/kansasii-mic/results/{mhk,mgit}/ (figures start from empty directories).
 #SBATCH --job-name=kansasii-mic
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=8G
 #SBATCH --time=02:00:00
-#SBATCH --output=/shares/sander.imm.uzh/MM/kansasii/output/mic/logs/%x-%j.log
+#SBATCH --output=/shares/sander.imm.uzh/MM/kansasii/output/kansasii-mic/logs/%x-%j.log
 
 set -euo pipefail
 source "${KANSASII_ROOT:-/shares/sander.imm.uzh/MM/kansasii}/repos/kansasii-docs/templates/kansasii_paths.sh"
 REPO=$REPOS/kansasii-mic
-OUTPUT=$OUTPUT_ROOT/mic
+OUTPUT=$OUT_MIC/results
 source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate env_mic
 cd "$REPO"

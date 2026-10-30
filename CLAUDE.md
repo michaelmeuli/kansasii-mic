@@ -20,7 +20,7 @@ outputs. This file only lists what is easy to get wrong.
   for isolates without mic.csv panel data only (`source` column); values snapped to the dilution series
   (`snap_ast_jc_value`). Linked via `TNR_JC`; flag `MIC_JC` in the link table.
 - **Outputs are on the shares, not in the repo:**
-  `/shares/sander.imm.uzh/MM/kansasii/output/mic/` (`mhk/` and `mgit/`).
+  `/shares/sander.imm.uzh/MM/kansasii/output/kansasii-mic/results/` (`mhk/` and `mgit/`).
   Before a rerun, empty that directory first so no stale figures remain.
   Inputs are in `/shares/sander.imm.uzh/MM/kansasii/data/imm/`.
 - **Two parallel pipelines** share the same screening-map matching:

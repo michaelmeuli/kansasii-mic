@@ -11,7 +11,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # kansasii_paths.py sits next to this script
 
-from kansasii_paths import MIC_CSV, OUTPUT_ROOT, SCREENING_MAP_AST_JC, SCREENING_MAP_LINK  # noqa: E402
+from kansasii_paths import MIC_CSV, OUT_MIC, SCREENING_MAP_AST_JC, SCREENING_MAP_LINK
 from kansasii_mic.loading import load_ast_jc_long, load_mgit_long, load_mic_long
 from kansasii_mic.mgit import filter_int_erg_i_or_r, mgit_summary, tnr_mgit_resistance_ranking
 from kansasii_mic.overview import mgit_mic_counts, mgit_overview, mhk_mic_counts, mhk_overview
@@ -140,7 +140,7 @@ def main() -> None:
         help="screening_map_ast_jc.csv (wide jc MIC table); adds isolates without MHK-panel data in mic.csv",
     )
     parser.add_argument("--no-ast-jc", action="store_true", help="do not add the jc table")
-    parser.add_argument("--out-dir", type=Path, default=OUTPUT_ROOT / "mic", help="writes mhk/ and mgit/ below it")
+    parser.add_argument("--out-dir", type=Path, default=OUT_MIC / "results", help="writes mhk/ and mgit/ below it")
     args = parser.parse_args()
 
     args.out_dir.mkdir(parents=True, exist_ok=True)

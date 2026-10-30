@@ -130,8 +130,8 @@ pytest tests/
 
 python scripts/01_run_analysis.py   # all four paths default to the shared constants:
 #   --mic-csv MIC_CSV  --screening-map SCREENING_MAP_LINK  --ast-jc SCREENING_MAP_AST_JC  --out-dir OUTPUT_ROOT/mic
-#   (data/imm/*.csv and output/mic); --no-ast-jc leaves the jc table out
-sbatch submit_mic.sbatch            # tests, then the analysis, then MANIFEST.txt in output/mic (what run_downstream.sh submits)
+#   (data/imm/*.csv and output/kansasii-mic/results); --no-ast-jc leaves the jc table out
+sbatch submit_mic.sbatch            # tests, then the analysis, then MANIFEST.txt in output/kansasii-mic/results (what run_downstream.sh submits)
 ```
 
 `--no-ast-jc` leaves the jc table out. `screening_map_ast_jc.csv` is a wide MIC table (one column per drug, abbreviations
@@ -144,7 +144,7 @@ by 1-2 dilutions. The table's rounded values are snapped to the 2-fold series be
 `x.0` -> `x`, and the SXT denominators are rebuilt from the numerator (1:19: 0.12/2.38, 0.25/4.75, 0.5/9.5,
 1/19; the file has 2.38, 2.39, 2.40 ... from fill-down).
 
-## Outputs (`output/mic/`)
+## Outputs (`output/kansasii-mic/results/`)
 
 The pipeline runs twice and writes two parallel output trees under
 `--out-dir`: `mhk/` for the broth-microdilution MHK panel rows, and
