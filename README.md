@@ -156,6 +156,7 @@ TNR/MHK matching and produce identical file layouts:
   antibiotic, with `NR`/`PROBENNUMMER`/`TNR`/`MHK` from screening_map)
   used for the analysis.
 - `excluded_qc.csv` -- rows dropped as flat-profile data-quality artifacts.
+- `../excluded_isolates.csv` -- isolates with `excluded=true` in `screening_map_results.csv`, dropped before QC (`--keep-excluded` to disable).
 - `parse_failures.csv` -- written only if any `MHK` value could not be
   parsed at all.
 - `outliers_per_antibiotic.csv`, `tnr_resistance_ranking.csv` -- see above.

@@ -11,8 +11,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # kansasii_paths.py sits next to this script
 
-from kansasii_paths import MIC_CSV, OUT_MIC, SCREENING_MAP_AST_JC, SCREENING_MAP_LINK
-from kansasii_mic.loading import load_ast_jc_long, load_mgit_long, load_mic_long
+from kansasii_paths import MIC_CSV, OUT_MIC, SCREENING_MAP_AST_JC, SCREENING_MAP_LINK, SCREENING_MAP_RESULTS
+from kansasii_mic.loading import drop_excluded, load_ast_jc_long, load_mgit_long, load_mic_long
 from kansasii_mic.mgit import filter_int_erg_i_or_r, mgit_summary, tnr_mgit_resistance_ranking
 from kansasii_mic.overview import mgit_mic_counts, mgit_overview, mhk_mic_counts, mhk_overview
 from kansasii_mic.outliers import per_antibiotic_outliers, tnr_resistance_ranking
@@ -139,6 +139,13 @@ def main() -> None:
         default=SCREENING_MAP_AST_JC,
         help="screening_map_ast_jc.csv (wide jc MIC table); adds isolates without MHK-panel data in mic.csv",
     )
+    parser.add_argument(
+        "--screening-map-results",
+        type=Path,
+        default=SCREENING_MAP_RESULTS,
+        help="screening_map_results.csv; isolates with excluded=true are dropped (see kansasii-docs EXCLUSIONS.md)",
+    )
+    parser.add_argument("--keep-excluded", action="store_true", help="do not drop excluded isolates")
     parser.add_argument("--no-ast-jc", action="store_true", help="do not add the jc table")
     parser.add_argument("--out-dir", type=Path, default=OUT_MIC / "results", help="writes mhk/ and mgit/ below it")
     args = parser.parse_args()
@@ -152,9 +159,17 @@ def main() -> None:
         print(f"[MHK] ast_jc: {len(jc_df)} rows, {jc_df['PROBENNUMMER'].nunique()} isolates added")
         long_df = pd.concat([long_df, jc_df], ignore_index=True)
         failures_df = pd.concat([failures_df, jc_failures_df], ignore_index=True)
+    dropped: list[str] = []
+    if not args.keep_excluded:
+        long_df, dropped = drop_excluded(long_df, args.screening_map_results)
     _run_pipeline(long_df, failures_df, args.out_dir / "mhk", "MHK")
 
     mgit_long_df, mgit_failures_df = load_mgit_long(args.mic_csv, args.screening_map)
+    if not args.keep_excluded:
+        mgit_long_df, mgit_dropped = drop_excluded(mgit_long_df, args.screening_map_results)
+        dropped = sorted(set(dropped) | set(mgit_dropped))
+        pd.DataFrame({"PROBENNUMMER": dropped}).to_csv(args.out_dir / "excluded_isolates.csv", index=False)
+        print(f"Dropped {len(dropped)} excluded isolates: {', '.join(dropped)}")
     _run_mgit_pipeline(mgit_long_df, mgit_failures_df, args.out_dir / "mgit")
 
 

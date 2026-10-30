@@ -338,3 +338,17 @@ def load_ast_jc_long(
     long_df = long_df[~long_df["PROBENNUMMER"].isin(have_panel)].copy()
     long_df["source"] = "ast_jc"
     return long_df.reset_index(drop=True), failures_df
+
+
+def drop_excluded(long_df: pd.DataFrame, results_csv: Path) -> tuple[pd.DataFrame, list[str]]:
+    """Drop isolates flagged ``excluded`` in screening_map_results.csv (matched on PROBENNUMMER).
+
+    Returns the filtered frame and the dropped PROBENNUMMER values. A missing results table keeps everything.
+    """
+    if not results_csv.exists():
+        print(f"WARNING: {results_csv} not found; excluded isolates are not removed")
+        return long_df, []
+    res = pd.read_csv(results_csv, dtype=str, usecols=["PROBENNUMMER", "excluded"])
+    bad = set(res.loc[res["excluded"].str.strip().str.lower() == "true", "PROBENNUMMER"])
+    dropped = sorted(bad & set(long_df["PROBENNUMMER"]))
+    return long_df[~long_df["PROBENNUMMER"].isin(bad)].reset_index(drop=True), dropped

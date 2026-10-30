@@ -40,3 +40,18 @@ def test_mhk_made_under_other_tnr_is_still_matched(tmp_path: Path) -> None:
     )
     df, _ = load_mic_long(mic, link)
     assert sorted(df["PROBENNUMMER"]) == ["P1", "P3"]
+
+
+def test_drop_excluded(tmp_path):
+    import pandas as pd
+
+    from kansasii_mic.loading import drop_excluded
+
+    res = tmp_path / "res.csv"
+    res.write_text("PROBENNUMMER,excluded\nA,true\nB,false\nC,true\n")
+    df = pd.DataFrame({"PROBENNUMMER": ["A", "B", "B"], "x": [1, 2, 3]})
+    out, dropped = drop_excluded(df, res)
+    assert list(out["PROBENNUMMER"]) == ["B", "B"]
+    assert dropped == ["A"]
+    out, dropped = drop_excluded(df, tmp_path / "missing.csv")
+    assert len(out) == 3 and dropped == []
