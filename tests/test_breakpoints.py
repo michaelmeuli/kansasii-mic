@@ -35,7 +35,8 @@ def test_categorize_interval() -> None:
     assert categorize_interval("Isoniazid", 10, nan) == "R"
     assert categorize_interval("Clofazimin", 1, 4) is None
     assert categorize_interval("Clofazimin", 2, 4) == "R"
-    assert categorize_interval("Streptomycin", 1, 4) is None
+    assert categorize_interval("Streptomycin", 1, 4) == "S"  # non-CLSI threshold 16
+    assert categorize_interval("Bedaquilin", 1, 4) is None  # no cutoff at all
 
 
 def test_non_clsi_thresholds() -> None:
@@ -43,4 +44,7 @@ def test_non_clsi_thresholds() -> None:
 
     assert categorize("Isoniazid", 8.0) == "S" and categorize("Isoniazid", 16.0) == "R"
     assert categorize("Clofazimin", 2.0) == "S" and categorize("Clofazimin", 4.0) == "R"
-    assert has_cutoff("Ethambutol") and has_cutoff("Rifampicin") and not has_cutoff("Streptomycin")
+    assert has_cutoff("Ethambutol") and has_cutoff("Rifampicin") and not has_cutoff("Bedaquilin")
+    assert has_cutoff("Ethionamid") and has_cutoff("Streptomycin")
+    assert categorize("Ethionamid", 0.6) == "S" and categorize("Ethionamid", 1.2) == "R"
+    assert categorize("Streptomycin", 16.0) == "S" and categorize("Streptomycin", 32.0) == "R"

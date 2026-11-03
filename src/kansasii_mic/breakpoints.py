@@ -37,16 +37,7 @@ import math
 
 # The cutoff data (Breakpoint, CLSI_KANSASII_BREAKPOINTS, NON_CLSI_THRESHOLDS_MG_L) is shared with the iTOL
 # tree script: vendored copy of kansasii-docs/templates/kansasii_cutoffs.py, edit the template only.
-from .kansasii_cutoffs import CLSI_KANSASII_BREAKPOINTS, Breakpoint
-from .kansasii_cutoffs import NON_CLSI_THRESHOLDS_MG_L as _ALL_NON_CLSI_THRESHOLDS_MG_L
-
-# Ethionamide and streptomycin have a threshold in the tree script but are deliberately left without a cutoff in
-# the MIC overviews here (not classified, as before the thresholds were shared). Remove a drug from this tuple to
-# classify it in the overview tables too.
-_NOT_CLASSIFIED_HERE = ("Ethionamid", "Streptomycin")
-NON_CLSI_THRESHOLDS_MG_L: dict[str, float] = {
-    d: t for d, t in _ALL_NON_CLSI_THRESHOLDS_MG_L.items() if d not in _NOT_CLASSIFIED_HERE
-}
+from .kansasii_cutoffs import CLSI_KANSASII_BREAKPOINTS, NON_CLSI_THRESHOLDS_MG_L, Breakpoint
 
 __all__ = ["CLSI_KANSASII_BREAKPOINTS", "NON_CLSI_THRESHOLDS_MG_L", "Breakpoint", "categorize",
            "categorize_interval", "clsi_normalized", "has_cutoff"]

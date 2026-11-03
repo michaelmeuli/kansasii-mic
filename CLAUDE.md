@@ -25,8 +25,8 @@ outputs. This file only lists what is easy to get wrong.
   Inputs are in `/shares/sander.imm.uzh/MM/kansasii/data/imm/`.
 - **Cutoffs:** the data (`CLSI_KANSASII_BREAKPOINTS`, `NON_CLSI_THRESHOLDS_MG_L`) lives in
   `src/kansasii_mic/kansasii_cutoffs.py`, a vendored copy of `kansasii-docs/templates/kansasii_cutoffs.py` shared with
-  the iTOL tree script (never edit it here; `bash repos/check_sync.sh --fix`). `breakpoints.py` holds the logic and
-  drops Ethionamid and Streptomycin from the thresholds on purpose (`_NOT_CLASSIFIED_HERE`). Non-CLSI drugs: R if MIC > threshold, S otherwise, no I. Drugs with neither are left out of
+  the iTOL tree script (never edit it here; `bash repos/check_sync.sh --fix`). `breakpoints.py` holds the logic. Non-CLSI drugs
+  (Ethambutol 8, Isoniazid 8, Ethionamid 0.6, Streptomycin 16, Clofazimin 2; the ETO/STR values come from the tree script and are not sourced): R if MIC > threshold, S otherwise, no I. Drugs with neither are left out of
   the overview tables (`has_cutoff`).
 - **MGIT classification:** one MIC per isolate x drug = lowest concentration called S (`erg`, not `int_erg`);
   the MIC lies in (lower, upper] and `categorize_interval` gives S/I/R or None (`nr_unclassifiable`). Never

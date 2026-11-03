@@ -15,7 +15,7 @@ def test_mgit_overview_classifies_mic_with_clsi() -> None:
          (4, "Amikacin", 4.0, "R"), (4, "Amikacin", 20.0, "R"),  # MIC > 20: 40 < 64, unplaceable
          (5, "Isoniazid", 0.1, "R"), (5, "Isoniazid", 1.0, "S"),  # MIC 1 <= 8 -> S
          (6, "Isoniazid", 0.1, "R"), (6, "Isoniazid", 1.0, "R"),  # tested only to 1: unplaceable
-         (7, "Streptomycin", 1.0, "R"), (7, "Streptomycin", 4.0, "S")]  # no cutoff at all
+         (7, "Bedaquilin", 1.0, "R"), (7, "Bedaquilin", 4.0, "S")]  # no cutoff at all
     )
     out = mgit_overview(df).set_index("antibiotic")
     assert list(out.index) == ["Amikacin", "Isoniazid", "Rifampicin"]
@@ -31,12 +31,12 @@ def test_mgit_overview_classifies_mic_with_clsi() -> None:
 def test_mhk_overview_uses_clsi_breakpoints_and_skips_others() -> None:
     df = pd.DataFrame(
         {
-            "antibiotic": ["Rifampicin"] * 3 + ["Ethambutol"] * 2 + ["Streptomycin"],
+            "antibiotic": ["Rifampicin"] * 3 + ["Ethambutol"] * 2 + ["Bedaquilin"],
             "point_estimate": [0.5, 2.0, 1.0, 8.0, 16.0, 4.0],
         }
     )
     out = mhk_overview(df).set_index("antibiotic")
-    assert list(out.index) == ["Ethambutol", "Rifampicin"]  # Streptomycin: no cutoff
+    assert list(out.index) == ["Ethambutol", "Rifampicin"]  # Bedaquilin: no cutoff
     rif, emb = out.loc["Rifampicin"], out.loc["Ethambutol"]
     assert (rif.nr_susceptible, rif.nr_intermediate, rif.nr_resistant) == (2, 0, 1)
     assert (emb.nr_susceptible, emb.nr_resistant) == (1, 1)  # 8 == threshold is S, 16 > 8 is R
