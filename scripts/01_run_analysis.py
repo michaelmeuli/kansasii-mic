@@ -19,7 +19,6 @@ from kansasii_mic.outliers import per_antibiotic_outliers, tnr_resistance_rankin
 from kansasii_mic.plotting import (
     plot_antibiotic_distributions,
     plot_heatmap,
-    plot_mgit_category_counts,
     plot_mgit_heatmap,
     plot_mgit_mic_counts,
     plot_mic_count_table,
@@ -118,14 +117,13 @@ def _run_mgit_pipeline(mgit_long_df: pd.DataFrame, mgit_failures_df: pd.DataFram
         figures_dir / "mgit_mic_counts_per_concentration.png",
     )
 
-    count_paths = plot_mgit_category_counts(summary_df, figures_dir)
     heatmap_path = plot_mgit_heatmap(mgit_long_df, ranking_df, figures_dir)
     ranking_path = plot_mgit_resistance_ranking(ranking_df, figures_dir)
 
     print(f"[MGIT] Parsed rows: {len(mgit_long_df)}")
     print(f"[MGIT] Unique TNRs analyzed: {mgit_long_df['TNR'].nunique()}")
     print(f"[MGIT] I/R rows (R collapsed to highest concentration): {len(ir_highest_df)}")
-    print(f"[MGIT] Figures written: {len(count_paths)} per-antibiotic + {heatmap_path.name} + {ranking_path.name}")
+    print(f"[MGIT] Figures written: {heatmap_path.name} + {ranking_path.name}")
     print(f"[MGIT] Output directory: {out_dir}")
 
 

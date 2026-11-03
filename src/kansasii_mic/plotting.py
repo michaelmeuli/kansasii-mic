@@ -8,6 +8,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.colors
+import matplotlib.patches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -199,33 +200,6 @@ def plot_resistance_ranking(ranking_df: pd.DataFrame, out_dir: Path, top_n: int 
     return path
 
 
-def plot_mgit_category_counts(summary_df: pd.DataFrame, out_dir: Path) -> list[Path]:
-    """One stacked bar chart per antibiotic: ERG category counts by tested concentration."""
-    out_dir.mkdir(parents=True, exist_ok=True)
-    paths = []
-    for antibiotic_key, group in summary_df.groupby("antibiotic"):
-        antibiotic = str(antibiotic_key)
-        group = group.sort_values("concentration_mg_l")
-        fig, ax = plt.subplots(figsize=(6, 3.2))
-        x = np.arange(len(group))
-        bottom = np.zeros(len(group))
-        for cat in ERG_CATEGORIES:
-            values = group[cat].to_numpy(dtype=float)
-            ax.bar(x, values, bottom=bottom, color=ERG_COLORS[cat], label=cat, width=0.6)
-            bottom += values
-        ax.set_xticks(x)
-        ax.set_xticklabels([f"{c:g} mg/l" for c in group["concentration_mg_l"]])
-        ax.set_ylabel("Isolates (n)")
-        ax.set_title(f"{antibiotic} -- MGIT breakpoint results (n={int(group['n_tested'].sum())})")
-        ax.legend(loc="upper right", fontsize=7, frameon=False, ncols=len(ERG_CATEGORIES))
-        fig.tight_layout()
-        path = out_dir / f"{_safe_filename(antibiotic)}_mgit_counts.png"
-        fig.savefig(path, dpi=150)
-        plt.close(fig)
-        paths.append(path)
-    return paths
-
-
 def plot_mgit_heatmap(mgit_long_df: pd.DataFrame, ranking_df: pd.DataFrame, out_dir: Path) -> Path:
     """Isolate x antibiotic@concentration heatmap of ERG category (categorical, not a MIC scale)."""
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -332,6 +306,15 @@ def plot_mgit_mic_counts(mic_counts_df: pd.DataFrame, out_dir: Path) -> list[Pat
         colors = [BREAKPOINT_R_COLOR if np.isnan(v) else POINT_COLOR for v in group["mic_mg_l"]]
         bars = ax.bar(x, group["n"], color=colors, width=0.6)
         ax.bar_label(bars, fontsize=8)
+        ax.legend(
+            handles=[
+                matplotlib.patches.Patch(color=POINT_COLOR, label="MIC = lowest concentration with no growth"),
+                matplotlib.patches.Patch(color=BREAKPOINT_R_COLOR, label="Growth at all tested concentrations (MIC > highest)"),
+            ],
+            loc="upper right",
+            fontsize=7,
+            frameon=False,
+        )
         ax.set_xticks(x)
         ax.set_xticklabels(group["mic_label"])
         ax.set_xlabel("MIC (mg/L) = lowest concentration with no growth (S)")
