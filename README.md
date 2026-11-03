@@ -111,9 +111,9 @@ consistent with this dataset's own `INT_ERG`/`ERG` marking those drugs
   was tested for, plus counts of CLSI-resistant results -- used to rank
   overall "most resistant" / "most susceptible" isolates.
 
-Most antibiotics have MIC data for ~50-52 of the 54 usable isolates, but a
-few are tested rarely (e.g. Clofazimin, n=2 in this dataset) -- Tukey
-fences on that few points are uninformative, so treat outlier flags (or
+Every antibiotic in the current `mhk/` analysis has MIC data for 77-78 of the 78 usable isolates (41 from mic.csv, 37 only from the jc table;
+Ethionamid 77, the rest 78). If an antibiotic is tested rarely -- Tukey
+fences on a few points are uninformative -- treat outlier flags (or
 their absence) for low-n antibiotics with caution; check
 `n_antibiotics_tested`-style counts in the per-antibiotic figures/titles
 before drawing conclusions.
@@ -138,7 +138,7 @@ sbatch submit_mic.sbatch            # tests, then the analysis, then MANIFEST.tx
 AMI, CLR, EMB, INH, MXF, RIF, SXT, CIP, DOX, ETH, LZD, RFB, STR) for the jc-sequenced isolates; its `TNR` is
 a `TNR_JC` of screening_map_link (flag column `MIC_JC`). It is melted to the mic.csv layout and added to the
 `mhk/` analysis (`mic_parsed.csv` gets a `source` column: `mic.csv` / `ast_jc`) **only for isolates that have
-no MHK-panel rows in mic.csv**. For isolates in both (currently 9) mic.csv wins; the two measurements differ
+no MHK-panel rows in mic.csv**. For isolates in both (currently 12 of the 49 jc isolates that enter the analysis) mic.csv wins; the two measurements differ
 by 1-2 dilutions. The table's rounded values are snapped to the 2-fold series before parsing
 (`snap_ast_jc_value` in `loading.py`): 0.1 / 0.125 / 0.13 -> 0.12, 0.3 -> 0.25 (ETH keeps 0.3, 0.2 -> 0.15),
 `x.0` -> `x`, and the SXT denominators are rebuilt from the numerator (1:19: 0.12/2.38, 0.25/4.75, 0.5/9.5,
