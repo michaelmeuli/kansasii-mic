@@ -6,7 +6,7 @@ from collections.abc import Iterable
 
 import pandas as pd
 
-from .breakpoints import CLSI_KANSASII_BREAKPOINTS, categorize
+from .breakpoints import CLSI_KANSASII_BREAKPOINTS, categorize, categorize_interval
 
 OVERVIEW_COLUMNS = [
     "antibiotic",
@@ -26,30 +26,65 @@ def _fmt(values: Iterable[float]) -> str:
     return ", ".join(f"{v:g}" for v in sorted(set(values))) or "-"
 
 
-def mgit_overview(mgit_long_df: pd.DataFrame) -> pd.DataFrame:
-    """MGIT: concentrations (mg/L) at which S/I/R was called, and isolates by worst call.
+MGIT_OVERVIEW_COLUMNS = [*OVERVIEW_COLUMNS, "nr_unclassifiable"]
 
-    An isolate tested at several concentrations is counted once per antibiotic,
-    as R if any concentration was R, else I if any was I, else S. K/U calls
-    carry no S/I/R information and are ignored.
+# erg is the final call (also used by the duplicate resolution and the summary).
+_CALL_COL = "erg"
+
+
+def mgit_isolate_mics(mgit_long_df: pd.DataFrame) -> pd.DataFrame:
+    """One row per TNR x antibiotic with the MIC interval implied by the MGIT calls.
+
+    MIC = lowest tested concentration called S (no growth), so the true MIC lies in
+    ``(lower, upper]``: ``upper`` is that concentration (NaN if no S call, i.e. MIC
+    above the tested range) and ``lower`` the highest tested concentration below it
+    (NaN if none). K/U calls are ignored; isolates with no S/I/R call are skipped.
     """
-    df = mgit_long_df[mgit_long_df["int_erg"].isin(_SEVERITY)]
     rows = []
-    for antibiotic, group in df.groupby("antibiotic"):
-        worst = group.assign(sev=group["int_erg"].map(_SEVERITY)).groupby("TNR")["sev"].max()
-        conc = {c: group.loc[group["int_erg"] == c, "concentration_mg_l"] for c in _SEVERITY}
+    calls = mgit_long_df[mgit_long_df[_CALL_COL].isin(_SEVERITY)]
+    for (tnr, antibiotic), iso in calls.groupby(["TNR", "antibiotic"]):
+        conc = iso["concentration_mg_l"]
+        s = iso.loc[iso[_CALL_COL] == "S", "concentration_mg_l"]
+        upper = float(s.min()) if len(s) else float("nan")
+        below = conc[conc < upper] if len(s) else conc
+        lower = float(below.max()) if len(below) else float("nan")
+        rows.append({"TNR": tnr, "antibiotic": antibiotic, "lower": lower, "upper": upper})
+    return pd.DataFrame(rows, columns=["TNR", "antibiotic", "lower", "upper"])
+
+
+def mgit_overview(mgit_long_df: pd.DataFrame) -> pd.DataFrame:
+    """MGIT: CLSI breakpoint ranges (mg/L) and isolates per category, from the MGIT MIC.
+
+    Each isolate x antibiotic is classified once from its MIC interval (see
+    :func:`mgit_isolate_mics`) with :func:`categorize_interval`; MICs the tested
+    concentrations cannot place relative to the CLSI limits are counted in
+    ``nr_unclassifiable``. Only antibiotics with a CLSI *M. kansasii* breakpoint are included.
+    """
+    mics = mgit_isolate_mics(mgit_long_df)
+    rows = []
+    for antibiotic_key, group in mics.groupby("antibiotic"):
+        antibiotic = str(antibiotic_key)
+        bp = CLSI_KANSASII_BREAKPOINTS.get(antibiotic)
+        if bp is None or bp.susceptible_max is None or bp.resistant_min is None:
+            continue
+        cats = pd.Series(
+            [categorize_interval(antibiotic, lo, up) for lo, up in zip(group["lower"], group["upper"], strict=True)],
+            dtype=object,
+        ).value_counts()
+        s, r = bp.susceptible_max, bp.resistant_min
         rows.append(
             {
                 "antibiotic": antibiotic,
-                "susceptible_concentration": _fmt(conc["S"]),
-                "intermediate_concentration": _fmt(conc["I"]),
-                "resistant_concentration": _fmt(conc["R"]),
-                "nr_susceptible": int((worst == 0).sum()),
-                "nr_intermediate": int((worst == 1).sum()),
-                "nr_resistant": int((worst == 2).sum()),
+                "susceptible_concentration": f"<= {s:g}",
+                "intermediate_concentration": _intermediate_label(s, r),
+                "resistant_concentration": f">= {r:g}",
+                "nr_susceptible": int(cats.get("S", 0)),
+                "nr_intermediate": int(cats.get("I", 0)),
+                "nr_resistant": int(cats.get("R", 0)),
+                "nr_unclassifiable": len(group) - int(sum(cats.get(c, 0) for c in "SIR")),
             }
         )
-    return pd.DataFrame(rows, columns=OVERVIEW_COLUMNS)
+    return pd.DataFrame(rows, columns=MGIT_OVERVIEW_COLUMNS)
 
 
 def _intermediate_label(s: float, r: float) -> str:
@@ -97,20 +132,17 @@ def mgit_mic_counts(mgit_long_df: pd.DataFrame) -> pd.DataFrame:
     isolates are kept with n = 0. Columns: antibiotic, mic_mg_l (NaN for the
     ">" bin), mic_label, n.
     """
+    mics = mgit_isolate_mics(mgit_long_df)
     rows = []
     for antibiotic, group in mgit_long_df.groupby("antibiotic"):
         tested = sorted(group["concentration_mg_l"].unique())
-        counts = {c: 0 for c in tested}
-        above = 0
-        for _, iso in group[group["int_erg"].isin(_SEVERITY)].groupby("TNR"):
-            s = iso.loc[iso["int_erg"] == "S", "concentration_mg_l"]
-            if len(s):
-                counts[s.min()] += 1
-            else:
-                above += 1
+        iso = mics[mics["antibiotic"] == antibiotic]
+        counts = iso["upper"].value_counts()
         for c in tested:
-            rows.append({"antibiotic": antibiotic, "mic_mg_l": c, "mic_label": f"{c:g}", "n": counts[c]})
-        rows.append({"antibiotic": antibiotic, "mic_mg_l": float("nan"), "mic_label": f">{tested[-1]:g}", "n": above})
+            rows.append({"antibiotic": antibiotic, "mic_mg_l": c, "mic_label": f"{c:g}", "n": int(counts.get(c, 0))})
+        rows.append(
+            {"antibiotic": antibiotic, "mic_mg_l": float("nan"), "mic_label": f">{tested[-1]:g}", "n": int(iso["upper"].isna().sum())}
+        )
     return pd.DataFrame(rows, columns=["antibiotic", "mic_mg_l", "mic_label", "n"])
 
 

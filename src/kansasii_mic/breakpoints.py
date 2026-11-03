@@ -69,6 +69,30 @@ def categorize(antibiotic: str, point_estimate: float) -> str | None:
     return "I"
 
 
+def categorize_interval(antibiotic: str, lower: float, upper: float) -> str | None:
+    """Classify a censored MGIT MIC lying in ``(lower, upper]`` (NaN = open end).
+
+    ``upper`` is the lowest concentration called S (NaN: no S call, MIC above the tested
+    range); ``lower`` the highest tested concentration below it (NaN: none). The next
+    dilution above ``lower`` (``2 * lower``) is taken as the smallest possible MIC.
+    Returns "S" / "I" / "R", or None if the interval straddles a CLSI limit or the
+    drug has no usable breakpoint pair.
+    """
+    bp = CLSI_KANSASII_BREAKPOINTS.get(antibiotic)
+    if bp is None or bp.susceptible_max is None or bp.resistant_min is None:
+        return None
+    has_lower, has_upper = not math.isnan(lower), not math.isnan(upper)
+    if has_upper and upper <= bp.susceptible_max:
+        return "S"
+    if not has_lower:
+        return None
+    if 2 * lower >= bp.resistant_min:
+        return "R"
+    if has_upper and lower >= bp.susceptible_max and upper < bp.resistant_min:
+        return "I"
+    return None
+
+
 def clsi_normalized(antibiotic: str, log2_mic: float) -> float | None:
     """Place a log2 MIC on a per-drug CLSI scale: 0 = S limit, 1 = R limit.
 

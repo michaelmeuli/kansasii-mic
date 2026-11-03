@@ -162,8 +162,12 @@ TNR/MHK matching and produce identical file layouts:
 - `outliers_per_antibiotic.csv`, `tnr_resistance_ranking.csv` -- see above.
 - `overview_table.csv`, `figures/overview_table.png` -- per-antibiotic overview: S/I/R
   concentrations (mg/L) and number of isolates susceptible/intermediate/resistant.
-  MHK: CLSI breakpoint ranges, only drugs with a CLSI breakpoint. MGIT: concentrations at which
-  each call occurred; each isolate counted once per drug by worst call (R > I > S), K/U ignored.
+  Both: CLSI breakpoint ranges, only drugs with a CLSI breakpoint. MGIT isolates are classified once per drug from
+  the MGIT MIC (lowest concentration called S, using `erg`); the MIC then lies in (next lower tested concentration, that
+  concentration], and the isolate is R if `2 * lower >= R limit`, S if `upper <= S limit`, I if the interval lies inside
+  the I range, else counted in `nr_unclassifiable` (MGIT only). K/U calls are ignored.
+  `tnr_mgit_resistance_ranking.csv` ranks by `n_R_clsi` (drugs with a CLSI-resistant MGIT MIC); `pct_R_call` in
+  `mgit_summary_per_antibiotic.csv` is the share of R calls at one concentration, not a resistance rate.
 - `mic_counts_per_concentration.csv`, `figures/mic_counts_per_concentration.png` (MHK) and
   `mgit_mic_counts_per_concentration.csv`, `figures/mgit_mic_counts_per_concentration.png`, `figures/<antibiotic>_mgit_mic_counts.png` (MGIT) -- isolates per MIC.
   MGIT MIC = lowest tested concentration called S; isolates with no S call go in a `>highest` bin.

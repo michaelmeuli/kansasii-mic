@@ -12,12 +12,19 @@ from __future__ import annotations
 
 import pandas as pd
 
+from .breakpoints import categorize_interval
+from .overview import mgit_isolate_mics
+
 # K = no assessment criteria defined, U = result unclear/indeterminate.
 ERG_CATEGORIES = ["S", "I", "R", "K", "U"]
 
 
 def mgit_summary(mgit_long_df: pd.DataFrame) -> pd.DataFrame:
-    """Per antibiotic x tested concentration: counts of each ERG category."""
+    """Per antibiotic x tested concentration: counts of each ERG category.
+
+    ``pct_R_call`` is the share of R calls at that concentration, not a resistance rate
+    (R at a low screening concentration only means MIC above it); use ``mgit_overview``.
+    """
     counts: pd.DataFrame = (
         mgit_long_df.groupby(["antibiotic", "concentration_mg_l"])["erg"]
         .value_counts()
@@ -28,14 +35,16 @@ def mgit_summary(mgit_long_df: pd.DataFrame) -> pd.DataFrame:
             counts[cat] = 0
     counts = counts[ERG_CATEGORIES]
     counts["n_tested"] = counts[ERG_CATEGORIES].sum(axis=1)
-    counts["pct_resistant"] = (counts["R"] / counts["n_tested"] * 100).round(1)
+    counts["pct_R_call"] = (counts["R"] / counts["n_tested"] * 100).round(1)
     return counts.reset_index().sort_values(["antibiotic", "concentration_mg_l"]).reset_index(drop=True)
 
 
 def tnr_mgit_resistance_ranking(mgit_long_df: pd.DataFrame) -> pd.DataFrame:
     """Per-TNR count of each ERG category across all antibiotics/concentrations tested.
 
-    Ranked by number of R (resistant) calls, most first.
+    ``n_R_clsi`` is the number of drugs for which the isolate's MGIT MIC (lowest S
+    concentration) is CLSI-resistant (see ``categorize_interval``; drugs without a CLSI
+    breakpoint never count). Ranked by ``n_R_clsi``, then raw ``n_R``, most first.
     """
 
     def _agg(group: pd.DataFrame) -> pd.Series:
@@ -53,13 +62,20 @@ def tnr_mgit_resistance_ranking(mgit_long_df: pd.DataFrame) -> pd.DataFrame:
         mgit_long_df.groupby("TNR").apply(_agg, include_groups=False)  # type: ignore[call-overload]  # stubs lack include_groups
         .reset_index()
     )
-    ranking = ranking.sort_values("n_R", ascending=False).reset_index(drop=True)
+    mics = mgit_isolate_mics(mgit_long_df)
+    mics["is_r"] = [
+        categorize_interval(str(a), lo, up) == "R"
+        for a, lo, up in zip(mics["antibiotic"], mics["lower"], mics["upper"], strict=True)
+    ]
+    n_r_clsi = mics.groupby("TNR")["is_r"].sum()
+    ranking["n_R_clsi"] = ranking["TNR"].map(n_r_clsi).fillna(0).astype(int)
+    ranking = ranking.sort_values(["n_R_clsi", "n_R"], ascending=False).reset_index(drop=True)
     ranking["rank_most_resistant"] = ranking.index + 1
     return ranking
 
 
 def filter_int_erg_i_or_r(mgit_long_df: pd.DataFrame) -> pd.DataFrame:
-    """Keep only int_erg I/R rows, collapsing R calls to the highest concentration tested.
+    """Keep only int_erg I/R rows, collapsing R calls to the highest concentration with an R call.
 
     A drug is typically tested at several concentrations per isolate; an R
     at a higher concentration is the more definitive result, so when the

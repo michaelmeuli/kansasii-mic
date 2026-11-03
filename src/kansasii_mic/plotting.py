@@ -239,15 +239,15 @@ def plot_mgit_heatmap(mgit_long_df: pd.DataFrame, ranking_df: pd.DataFrame, out_
 
 def plot_mgit_resistance_ranking(ranking_df: pd.DataFrame, out_dir: Path, top_n: int = 15) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
-    ranked = ranking_df.sort_values("n_R", ascending=False)
+    ranked = ranking_df.sort_values("n_R_clsi", ascending=False)
     top = ranked.head(top_n)
     bottom = ranked.tail(top_n)
-    combined = pd.concat([top, bottom]).drop_duplicates(subset="TNR").sort_values("n_R")
+    combined = pd.concat([top, bottom]).drop_duplicates(subset="TNR").sort_values("n_R_clsi")
 
     fig, ax = plt.subplots(figsize=(7, max(4, 0.32 * len(combined))))
-    ax.barh(combined["NR"].astype(int).astype(str), combined["n_R"], color=BREAKPOINT_R_COLOR)
-    ax.set_xlabel("Number of R (resistant) MGIT breakpoint calls")
-    ax.set_title(f"Most MGIT-resistant isolates by R-call count (top {top_n})")
+    ax.barh(combined["NR"].astype(int).astype(str), combined["n_R_clsi"], color=BREAKPOINT_R_COLOR)
+    ax.set_xlabel("Number of drugs with CLSI-resistant MGIT MIC")
+    ax.set_title(f"Most MGIT-resistant isolates by CLSI-resistant drugs (top {top_n})")
     fig.tight_layout()
     path = out_dir / "resistance_ranking_mgit.png"
     fig.savefig(path, dpi=150)
@@ -265,12 +265,17 @@ def plot_overview_table(overview_df: pd.DataFrame, title: str, out_path: Path, f
     fig, ax = plt.subplots(figsize=(11, fig_h))
     ax.axis("off")
     fig.subplots_adjust(left=0.01, right=0.99, top=0.88, bottom=0.04)
+    headers = list(_OVERVIEW_HEADERS)
+    widths = [0.29, 0.13, 0.16, 0.13, 0.09, 0.11, 0.09]
+    if "nr_unclassifiable" in overview_df.columns:  # MGIT: MICs the tested concentrations cannot place
+        headers.append("n\nunclassifiable")
+        widths.append(0.12)
     table = ax.table(
         cellText=overview_df.astype(str).to_numpy().tolist(),
-        colLabels=_OVERVIEW_HEADERS,
+        colLabels=headers,
         cellLoc="center",
         loc="upper center",
-        colWidths=[0.29, 0.13, 0.16, 0.13, 0.09, 0.11, 0.09],
+        colWidths=widths,
     )
     table.auto_set_font_size(False)
     table.set_fontsize(9)

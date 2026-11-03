@@ -19,3 +19,15 @@ def test_clsi_normalized_sides() -> None:
 
 def test_clsi_normalized_none_without_breakpoint() -> None:
     assert clsi_normalized("Isoniazid", 1.0) is None
+
+
+def test_categorize_interval() -> None:
+    from kansasii_mic.breakpoints import categorize_interval
+
+    nan = float("nan")
+    assert categorize_interval("Amikacin", 1, 4) == "S"
+    assert categorize_interval("Amikacin", 4, 20) is None  # 20 > S limit 16, below R limit
+    assert categorize_interval("Rifampicin", 1, 4) == "R"
+    assert categorize_interval("Rifampicin", 1, nan) == "R"
+    assert categorize_interval("Clarithromycin", 4, 16) is None
+    assert categorize_interval("Isoniazid", 0.1, 1) is None
