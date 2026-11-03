@@ -42,9 +42,9 @@ def mgit_summary(mgit_long_df: pd.DataFrame) -> pd.DataFrame:
 def tnr_mgit_resistance_ranking(mgit_long_df: pd.DataFrame) -> pd.DataFrame:
     """Per-TNR count of each ERG category across all antibiotics/concentrations tested.
 
-    ``n_R_clsi`` is the number of drugs for which the isolate's MGIT MIC (lowest S
-    concentration) is CLSI-resistant (see ``categorize_interval``; drugs without a CLSI
-    breakpoint never count). Ranked by ``n_R_clsi``, then raw ``n_R``, most first.
+    ``n_R_mic`` is the number of drugs for which the isolate's MGIT MIC (lowest S
+    concentration) is resistant per CLSI breakpoint or non-CLSI threshold (see
+    ``categorize_interval``; drugs without either never count). Ranked by ``n_R_mic``, then raw ``n_R``, most first.
     """
 
     def _agg(group: pd.DataFrame) -> pd.Series:
@@ -68,8 +68,8 @@ def tnr_mgit_resistance_ranking(mgit_long_df: pd.DataFrame) -> pd.DataFrame:
         for a, lo, up in zip(mics["antibiotic"], mics["lower"], mics["upper"], strict=True)
     ]
     n_r_clsi = mics.groupby("TNR")["is_r"].sum()
-    ranking["n_R_clsi"] = ranking["TNR"].map(n_r_clsi).fillna(0).astype(int)
-    ranking = ranking.sort_values(["n_R_clsi", "n_R"], ascending=False).reset_index(drop=True)
+    ranking["n_R_mic"] = ranking["TNR"].map(n_r_clsi).fillna(0).astype(int)
+    ranking = ranking.sort_values(["n_R_mic", "n_R"], ascending=False).reset_index(drop=True)
     ranking["rank_most_resistant"] = ranking.index + 1
     return ranking
 

@@ -22,7 +22,8 @@ are listed here for every isolate for descriptive/QC purposes. No CLSI
 *M. kansasii*-specific breakpoint exists for ethambutol, isoniazid,
 streptomycin, ethionamide, bedaquiline or clofazimine -- consistent with
 those drugs being marked "K" (no assessment criteria) in this dataset's
-own ``INT_ERG``/``ERG`` columns.
+own ``INT_ERG``/``ERG`` columns. For ethambutol, isoniazid and clofazimine a
+single non-CLSI threshold is used instead (``NON_CLSI_THRESHOLDS_MG_L``).
 
 Values are expressed as (susceptible upper bound, resistant lower bound);
 ``None`` means no CLSI cutoff is defined for that side. Antibiotic keys
@@ -57,8 +58,26 @@ CLSI_KANSASII_BREAKPOINTS: dict[str, Breakpoint] = {
 }
 
 
+# Drugs without a CLSI M. kansasii breakpoint: one threshold in mg/L, R if MIC > threshold
+# (MIC == threshold is S), no I category. Ethambutol and isoniazid are copied from
+# NON_CLSI_THRESHOLDS_MG_L in immensekansasii/scripts/12_generate_itol_ast.py (tree figure);
+# clofazimine (2 mg/L) is set here only -- that script has no clofazimine ring.
+NON_CLSI_THRESHOLDS_MG_L: dict[str, float] = {"Ethambutol": 8.0, "Isoniazid": 8.0, "Clofazimin": 2.0}
+
+
+def has_cutoff(antibiotic: str) -> bool:
+    """True if the drug has a CLSI breakpoint pair or a non-CLSI threshold."""
+    bp = CLSI_KANSASII_BREAKPOINTS.get(antibiotic)
+    if bp is not None:
+        return bp.susceptible_max is not None and bp.resistant_min is not None
+    return antibiotic in NON_CLSI_THRESHOLDS_MG_L
+
+
 def categorize(antibiotic: str, point_estimate: float) -> str | None:
-    """Return "S", "I" or "R" per the CLSI table, or None if undefined."""
+    """Return "S", "I" or "R" per the CLSI table / non-CLSI threshold, or None if undefined."""
+    threshold = NON_CLSI_THRESHOLDS_MG_L.get(antibiotic)
+    if threshold is not None:
+        return "R" if point_estimate > threshold else "S"
     bp = CLSI_KANSASII_BREAKPOINTS.get(antibiotic)
     if bp is None:
         return None
@@ -75,9 +94,15 @@ def categorize_interval(antibiotic: str, lower: float, upper: float) -> str | No
     ``upper`` is the lowest concentration called S (NaN: no S call, MIC above the tested
     range); ``lower`` the highest tested concentration below it (NaN: none). The next
     dilution above ``lower`` (``2 * lower``) is taken as the smallest possible MIC.
-    Returns "S" / "I" / "R", or None if the interval straddles a CLSI limit or the
-    drug has no usable breakpoint pair.
+    Returns "S" / "I" / "R", or None if the interval straddles a limit/threshold or the
+    drug has no cutoff. Non-CLSI drugs: S if ``upper <= t``, R if ``lower >= t``.
     """
+    has_lower, has_upper = not math.isnan(lower), not math.isnan(upper)
+    threshold = NON_CLSI_THRESHOLDS_MG_L.get(antibiotic)
+    if threshold is not None:
+        if has_upper and upper <= threshold:
+            return "S"
+        return "R" if has_lower and lower >= threshold else None
     bp = CLSI_KANSASII_BREAKPOINTS.get(antibiotic)
     if bp is None or bp.susceptible_max is None or bp.resistant_min is None:
         return None

@@ -9,6 +9,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.colors
 import matplotlib.patches
+import matplotlib.ticker
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -239,15 +240,15 @@ def plot_mgit_heatmap(mgit_long_df: pd.DataFrame, ranking_df: pd.DataFrame, out_
 
 def plot_mgit_resistance_ranking(ranking_df: pd.DataFrame, out_dir: Path, top_n: int = 15) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
-    ranked = ranking_df.sort_values("n_R_clsi", ascending=False)
-    top = ranked.head(top_n)
-    bottom = ranked.tail(top_n)
-    combined = pd.concat([top, bottom]).drop_duplicates(subset="TNR").sort_values("n_R_clsi")
+    # only isolates with a resistant drug; the rest are all zero and carry no information
+    combined = ranking_df[ranking_df["n_R_mic"] > 0].sort_values("n_R_mic", ascending=False).head(top_n)
+    combined = combined.sort_values("n_R_mic")
 
     fig, ax = plt.subplots(figsize=(7, max(4, 0.32 * len(combined))))
-    ax.barh(combined["NR"].astype(int).astype(str), combined["n_R_clsi"], color=BREAKPOINT_R_COLOR)
-    ax.set_xlabel("Number of drugs with CLSI-resistant MGIT MIC")
-    ax.set_title(f"Most MGIT-resistant isolates by CLSI-resistant drugs (top {top_n})")
+    ax.barh(combined["NR"].astype(int).astype(str), combined["n_R_mic"], color=BREAKPOINT_R_COLOR)
+    ax.set_xlabel("Number of drugs with resistant MGIT MIC")
+    ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
+    ax.set_title(f"MGIT-resistant isolates by resistant drugs (n={len(combined)} of {len(ranking_df)} isolates)")
     fig.tight_layout()
     path = out_dir / "resistance_ranking_mgit.png"
     fig.savefig(path, dpi=150)
@@ -311,10 +312,11 @@ def plot_mgit_mic_counts(mic_counts_df: pd.DataFrame, out_dir: Path) -> list[Pat
         colors = [BREAKPOINT_R_COLOR if np.isnan(v) else POINT_COLOR for v in group["mic_mg_l"]]
         bars = ax.bar(x, group["n"], color=colors, width=0.6)
         ax.bar_label(bars, fontsize=8)
+        ax.set_ylim(top=max(1, group["n"].max()) * 1.35)  # headroom so the legend clears the bars
         ax.legend(
             handles=[
                 matplotlib.patches.Patch(color=POINT_COLOR, label="MIC = lowest concentration with no growth"),
-                matplotlib.patches.Patch(color=BREAKPOINT_R_COLOR, label="Growth at all tested concentrations (MIC > highest)"),
+                matplotlib.patches.Patch(color=BREAKPOINT_R_COLOR, label="Growth at all concentrations tested for that isolate (MIC > highest tested)"),
             ],
             loc="upper right",
             fontsize=7,

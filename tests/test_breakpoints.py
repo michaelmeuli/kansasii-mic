@@ -30,4 +30,17 @@ def test_categorize_interval() -> None:
     assert categorize_interval("Rifampicin", 1, 4) == "R"
     assert categorize_interval("Rifampicin", 1, nan) == "R"
     assert categorize_interval("Clarithromycin", 4, 16) is None
-    assert categorize_interval("Isoniazid", 0.1, 1) is None
+    assert categorize_interval("Isoniazid", 0.1, 1) == "S"  # non-CLSI threshold 8
+    assert categorize_interval("Isoniazid", 1, nan) is None  # MIC > 1 may be on either side of 8
+    assert categorize_interval("Isoniazid", 10, nan) == "R"
+    assert categorize_interval("Clofazimin", 1, 4) is None
+    assert categorize_interval("Clofazimin", 2, 4) == "R"
+    assert categorize_interval("Streptomycin", 1, 4) is None
+
+
+def test_non_clsi_thresholds() -> None:
+    from kansasii_mic.breakpoints import categorize, has_cutoff
+
+    assert categorize("Isoniazid", 8.0) == "S" and categorize("Isoniazid", 16.0) == "R"
+    assert categorize("Clofazimin", 2.0) == "S" and categorize("Clofazimin", 4.0) == "R"
+    assert has_cutoff("Ethambutol") and has_cutoff("Rifampicin") and not has_cutoff("Streptomycin")
