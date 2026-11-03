@@ -23,7 +23,8 @@ are listed here for every isolate for descriptive/QC purposes. No CLSI
 streptomycin, ethionamide, bedaquiline or clofazimine -- consistent with
 those drugs being marked "K" (no assessment criteria) in this dataset's
 own ``INT_ERG``/``ERG`` columns. For ethambutol, isoniazid and clofazimine a
-single non-CLSI threshold is used instead (``NON_CLSI_THRESHOLDS_MG_L``).
+single non-CLSI threshold is used instead (``NON_CLSI_THRESHOLDS_MG_L``, defined in the shared
+``kansasii_cutoffs``, together with the CLSI table).
 
 Values are expressed as (susceptible upper bound, resistant lower bound);
 ``None`` means no CLSI cutoff is defined for that side. Antibiotic keys
@@ -33,36 +34,22 @@ match the canonical names produced by :mod:`kansasii_mic.loading`.
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
 
+# The cutoff data (Breakpoint, CLSI_KANSASII_BREAKPOINTS, NON_CLSI_THRESHOLDS_MG_L) is shared with the iTOL
+# tree script: vendored copy of kansasii-docs/templates/kansasii_cutoffs.py, edit the template only.
+from .kansasii_cutoffs import CLSI_KANSASII_BREAKPOINTS, Breakpoint
+from .kansasii_cutoffs import NON_CLSI_THRESHOLDS_MG_L as _ALL_NON_CLSI_THRESHOLDS_MG_L
 
-@dataclass(frozen=True)
-class Breakpoint:
-    susceptible_max: float | None  # MIC <= this -> S
-    resistant_min: float | None  # MIC >= this -> R
-
-
-CLSI_KANSASII_BREAKPOINTS: dict[str, Breakpoint] = {
-    "Clarithromycin": Breakpoint(susceptible_max=8, resistant_min=32),
-    "Rifampicin": Breakpoint(susceptible_max=1, resistant_min=2),
-    "Amikacin": Breakpoint(susceptible_max=16, resistant_min=64),
-    "Ciprofloxacin": Breakpoint(susceptible_max=1, resistant_min=4),
-    "Doxycyclin": Breakpoint(susceptible_max=1, resistant_min=8),
-    "Linezolid": Breakpoint(susceptible_max=8, resistant_min=32),
-    "Minocyclin": Breakpoint(susceptible_max=1, resistant_min=8),
-    "Moxifloxacin": Breakpoint(susceptible_max=1, resistant_min=4),
-    "Rifabutin": Breakpoint(susceptible_max=2, resistant_min=4),
-    # Expressed via the trimethoprim (numerator) component, matching how
-    # parsing.parse_mic reports the point estimate for combo values.
-    "Sulfamethoxazole/Trimethoprim": Breakpoint(susceptible_max=2, resistant_min=4),
+# Ethionamide and streptomycin have a threshold in the tree script but are deliberately left without a cutoff in
+# the MIC overviews here (not classified, as before the thresholds were shared). Remove a drug from this tuple to
+# classify it in the overview tables too.
+_NOT_CLASSIFIED_HERE = ("Ethionamid", "Streptomycin")
+NON_CLSI_THRESHOLDS_MG_L: dict[str, float] = {
+    d: t for d, t in _ALL_NON_CLSI_THRESHOLDS_MG_L.items() if d not in _NOT_CLASSIFIED_HERE
 }
 
-
-# Drugs without a CLSI M. kansasii breakpoint: one threshold in mg/L, R if MIC > threshold
-# (MIC == threshold is S), no I category. Ethambutol and isoniazid are copied from
-# NON_CLSI_THRESHOLDS_MG_L in immensekansasii/scripts/12_generate_itol_ast.py (tree figure);
-# clofazimine (2 mg/L) is set here only -- that script has no clofazimine ring.
-NON_CLSI_THRESHOLDS_MG_L: dict[str, float] = {"Ethambutol": 8.0, "Isoniazid": 8.0, "Clofazimin": 2.0}
+__all__ = ["CLSI_KANSASII_BREAKPOINTS", "NON_CLSI_THRESHOLDS_MG_L", "Breakpoint", "categorize",
+           "categorize_interval", "clsi_normalized", "has_cutoff"]
 
 
 def has_cutoff(antibiotic: str) -> bool:
