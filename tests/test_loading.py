@@ -42,7 +42,7 @@ def test_mhk_made_under_other_tnr_is_still_matched(tmp_path: Path) -> None:
     assert sorted(df["PROBENNUMMER"]) == ["P1", "P3"]
 
 
-def test_drop_excluded(tmp_path):
+def test_drop_excluded(tmp_path: Path) -> None:
     import pandas as pd
 
     from kansasii_mic.loading import drop_excluded
