@@ -312,16 +312,17 @@ def plot_mgit_mic_counts(mic_counts_df: pd.DataFrame, out_dir: Path) -> list[Pat
         colors = [BREAKPOINT_R_COLOR if np.isnan(v) else POINT_COLOR for v in group["mic_mg_l"]]
         bars = ax.bar(x, group["n"], color=colors, width=0.6)
         ax.bar_label(bars, fontsize=8)
-        ax.set_ylim(top=max(1, group["n"].max()) * 1.35)  # headroom so the legend clears the bars
-        ax.legend(
-            handles=[
-                matplotlib.patches.Patch(color=POINT_COLOR, label="MIC = lowest concentration with no growth"),
-                matplotlib.patches.Patch(color=BREAKPOINT_R_COLOR, label="Growth at all concentrations tested for that isolate (MIC > highest tested)"),
-            ],
-            loc="upper right",
-            fontsize=7,
-            frameon=False,
-        )
+        if (group["mic_mg_l"].isna() & (group["n"] > 0)).any():  # legend only where a non-empty red (>c) column exists
+            ax.set_ylim(top=max(1, group["n"].max()) * 1.35)  # headroom so the legend clears the bars
+            ax.legend(
+                handles=[
+                    matplotlib.patches.Patch(color=POINT_COLOR, label="MIC = lowest concentration with no growth"),
+                    matplotlib.patches.Patch(color=BREAKPOINT_R_COLOR, label="Growth at all concentrations tested for that isolate (MIC > highest tested)"),
+                ],
+                loc="upper right",
+                fontsize=7,
+                frameon=False,
+            )
         ax.set_xticks(x)
         ax.set_xticklabels(group["mic_label"])
         ax.set_xlabel("MIC (mg/L) = lowest concentration with no growth (S)")
