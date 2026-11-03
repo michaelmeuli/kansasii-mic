@@ -55,3 +55,25 @@ def test_drop_excluded(tmp_path):
     assert dropped == ["A"]
     out, dropped = drop_excluded(df, tmp_path / "missing.csv")
     assert len(out) == 3 and dropped == []
+
+
+def test_drop_unclear_when_result_exists() -> None:
+    from kansasii_mic.loading import drop_unclear_when_result_exists
+
+    df = pd.DataFrame(
+        {
+            "NR": [1, 1, 1, 2, 3, 3, 4, 4, 5, 5],
+            "antibiotic": ["Isoniazid"] * 10,
+            "concentration_mg_l": [10.0, 10.0, 3.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0],
+            "erg": ["S", "U", "U", "U", "U", "U", "R", "S", "S", "S"],
+        }
+    )
+    out = drop_unclear_when_result_exists(df)
+    assert list(zip(out["NR"], out["concentration_mg_l"], out["erg"])) == [
+        (1, 10.0, "S"),
+        (1, 3.0, "U"),  # only U for this key -> kept
+        (2, 10.0, "U"),
+        (3, 10.0, "U"),  # only U rows for this key: one kept
+        (4, 10.0, "S"),  # R and S: the more resistant one is dropped
+        (5, 10.0, "S"),  # identical duplicates collapse to one
+    ]

@@ -167,9 +167,29 @@ def _match_screening_map_mgit(
             }
         )
 
-    long_df = pd.DataFrame(rows)
+    long_df = drop_unclear_when_result_exists(pd.DataFrame(rows))
     failures_df = pd.DataFrame(failures)
     return long_df, failures_df
+
+
+# Resistance order used to pick one row among repeated tests; K (no criteria) sorts last.
+_ERG_RESISTANCE_ORDER = {"S": 0, "I": 1, "R": 2, "K": 3, "U": 4}
+
+
+def drop_unclear_when_result_exists(mgit_long_df: pd.DataFrame) -> pd.DataFrame:
+    """One MGIT row per isolate x antibiotic x concentration.
+
+    An isolate can have several rows per (NR, antibiotic, concentration), e.g. a repeat test after an
+    unclear first read. ``U`` (unclear) is dropped when a real result exists; if several remain, the
+    more resistant ones are dropped, keeping the least resistant call (S < I < R < K).
+    """
+    if mgit_long_df.empty:
+        return mgit_long_df
+    key = ["NR", "antibiotic", "concentration_mg_l"]
+    order = mgit_long_df["erg"].map(_ERG_RESISTANCE_ORDER)
+    ranked = mgit_long_df.assign(_order=order).sort_values("_order", kind="stable")
+    kept = ranked.drop_duplicates(key, keep="first")
+    return kept.sort_index().drop(columns="_order").reset_index(drop=True)
 
 
 # Every screening_map_link.csv column holding a TNR of the row's isolate:
