@@ -65,7 +65,7 @@ def tnr_resistance_ranking(outliers_df: pd.DataFrame) -> pd.DataFrame:
     """Aggregate per-TNR score across all antibiotics that TNR was tested for.
 
     score = mean modified z-score across drugs (higher = more resistant
-    overall), plus a count of CLSI-defined resistant (R) results.
+    overall), plus counts of resistant (R) and susceptible (S) results per CLSI breakpoint or, for INH/EMB/CFZ, the non-CLSI threshold.
     """
     def _agg(group: pd.DataFrame) -> pd.Series:
         return pd.Series(
@@ -74,8 +74,8 @@ def tnr_resistance_ranking(outliers_df: pd.DataFrame) -> pd.DataFrame:
                 "PROBENNUMMER": group["PROBENNUMMER"].iloc[0],
                 "n_antibiotics_tested": len(group),
                 "mean_modified_z": group["modified_z"].mean(skipna=True),
-                "n_clsi_resistant": (group["clsi_category"] == "R").sum(),
-                "n_clsi_susceptible": (group["clsi_category"] == "S").sum(),
+                "n_resistant": (group["clsi_category"] == "R").sum(),
+                "n_susceptible": (group["clsi_category"] == "S").sum(),
                 "n_outlier_more_resistant": (group["outlier_direction"] == "more_resistant").sum(),
                 "n_outlier_more_susceptible": (group["outlier_direction"] == "more_susceptible").sum(),
             }
