@@ -23,6 +23,16 @@ outputs. This file only lists what is easy to get wrong.
   `/shares/sander.imm.uzh/MM/kansasii/output/kansasii-mic/results/` (`mhk/` and `mgit/`).
   Before a rerun, empty that directory first so no stale figures remain.
   Inputs are in `/shares/sander.imm.uzh/MM/kansasii/data/imm/`.
+- **Cutoffs (`src/kansasii_mic/breakpoints.py`):** CLSI *M. kansasii* breakpoints in `CLSI_KANSASII_BREAKPOINTS`;
+  drugs without one use `NON_CLSI_THRESHOLDS_MG_L`: Ethambutol 8, Isoniazid 8 (copied from
+  `immensekansasii/scripts/12_generate_itol_ast.py`, keep in sync by hand) and Clofazimin 2 (set here only, the
+  tree script has no clofazimin). R if MIC > threshold, S otherwise, no I. Drugs with neither are left out of
+  the overview tables (`has_cutoff`).
+- **MGIT classification:** one MIC per isolate x drug = lowest concentration called S (`erg`, not `int_erg`);
+  the MIC lies in (lower, upper] and `categorize_interval` gives S/I/R or None (`nr_unclassifiable`). Never
+  count R calls per concentration as resistance (R at a low screening concentration, e.g. Amikacin 1 or INH 0.1
+  mg/l, only means MIC above it). Isolates with no S call go in a `>c` MIC bin at their *own* highest tested
+  concentration.
 - **Two parallel pipelines** share the same screening-map matching:
   MHK broth-microdilution rows (numeric MIC) and MGIT breakpoint rows
   (labels like `"Amikacin 4 mg/l"`, categorical, empty MHK). Don't mix them.
