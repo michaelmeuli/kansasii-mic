@@ -54,7 +54,7 @@ def _run_pipeline(long_df: pd.DataFrame, failures_df: pd.DataFrame, out_dir: Pat
         f"MHK (broth microdilution) overview vs CLSI M. kansasii breakpoints / thresholds (n={clean_df['TNR'].nunique()} isolates)",
         figures_dir / "overview_table.png",
         "First Line / Second Line: CLSI M. kansasii breakpoints (S if MIC <= S limit, R if >= R limit, I in between).\n"
-        "No CLSI Breakpoints: single threshold used here (R if MIC > t, no I category); Ethionamid and Streptomycin thresholds are not CLSI-sourced.\n"
+        "No CLSI Breakpoints: single threshold used here (R if MIC > t, no I category).\n"
         "SXT classified on the trimethoprim component. MIC point estimates (censored values at their bound; ranges at geometric mean). Minocyclin: no MHK data.",
     )
 

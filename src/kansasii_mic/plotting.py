@@ -17,7 +17,7 @@ from adjustText import adjust_text
 
 from .breakpoints import CLSI_KANSASII_BREAKPOINTS, clsi_normalized
 from .mgit import ERG_CATEGORIES
-from .overview import NO_CLSI_SECTION, overview_section
+from .overview import overview_section
 
 POINT_COLOR = "#3B6FA0"
 OUTLIER_RESISTANT_COLOR = "#C0392B"
@@ -302,12 +302,11 @@ def plot_overview_table(overview_df: pd.DataFrame, title: str, out_path: Path, f
             cell.set_facecolor(count_colors.get(col, "#444444"))
             cell.set_height(cell.get_height() * 1.5)
         elif row in band_rows:
-            clsi = band_rows[row] != NO_CLSI_SECTION
-            fill = "#D9D9D9" if clsi else "white"
+            fill = "#D9D9D9"
             cell.set_facecolor(fill)
             cell.set_edgecolor(fill)  # hide the inner cell borders so the band reads as one row
             if col == 0:
-                cell.set_text_props(weight="bold", ha="left", color="#222222" if clsi else "#555555", style="normal" if clsi else "italic")
+                cell.set_text_props(weight="bold", ha="left", color="#222222")
                 cell._loc = "left"  # type: ignore[attr-defined]
         elif col == 0:
             cell.set_text_props(weight="bold", ha="left")
