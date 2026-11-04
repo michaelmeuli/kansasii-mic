@@ -17,6 +17,7 @@ from adjustText import adjust_text
 
 from .breakpoints import CLSI_KANSASII_BREAKPOINTS, clsi_normalized
 from .mgit import ERG_CATEGORIES
+from .overview import NO_CLSI_SECTION, overview_section
 
 POINT_COLOR = "#3B6FA0"
 OUTLIER_RESISTANT_COLOR = "#C0392B"
@@ -262,7 +263,19 @@ _OVERVIEW_HEADERS = ["Antibiotic", "Susceptible\nconc. (mg/L)", "Intermediate\nc
 def plot_overview_table(overview_df: pd.DataFrame, title: str, out_path: Path, footnote: str = "") -> Path:
     """Render an overview table (see overview.OVERVIEW_COLUMNS) as an image."""
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    fig_h = 0.9 + 0.36 * (len(overview_df) + 1)
+    # Section bands (First Line / Second Line / No CLSI Breakpoints) are inserted as extra rows.
+    body: list[list[str]] = []
+    band_rows: dict[int, str] = {}  # table row index (header = 0) -> section title
+    ncols = overview_df.shape[1]
+    last_section = None
+    for rec in overview_df.astype(str).to_numpy().tolist():
+        section = overview_section(rec[0])
+        if section != last_section:
+            band_rows[len(body) + 1] = section
+            body.append([section] + [""] * (ncols - 1))
+            last_section = section
+        body.append(rec)
+    fig_h = 1.7 + 0.27 * (len(body) + 1)
     fig, ax = plt.subplots(figsize=(11, fig_h))
     ax.axis("off")
     fig.subplots_adjust(left=0.01, right=0.99, top=0.88, bottom=0.04)
@@ -272,7 +285,7 @@ def plot_overview_table(overview_df: pd.DataFrame, title: str, out_path: Path, f
         headers.append("n\nunclassifiable")
         widths.append(0.12)
     table = ax.table(
-        cellText=overview_df.astype(str).to_numpy().tolist(),
+        cellText=body,
         colLabels=headers,
         cellLoc="center",
         loc="upper center",
@@ -288,6 +301,14 @@ def plot_overview_table(overview_df: pd.DataFrame, title: str, out_path: Path, f
             cell.set_text_props(weight="bold", color="white")
             cell.set_facecolor(count_colors.get(col, "#444444"))
             cell.set_height(cell.get_height() * 1.5)
+        elif row in band_rows:
+            clsi = band_rows[row] != NO_CLSI_SECTION
+            fill = "#D9D9D9" if clsi else "white"
+            cell.set_facecolor(fill)
+            cell.set_edgecolor(fill)  # hide the inner cell borders so the band reads as one row
+            if col == 0:
+                cell.set_text_props(weight="bold", ha="left", color="#222222" if clsi else "#555555", style="normal" if clsi else "italic")
+                cell._loc = "left"  # type: ignore[attr-defined]
         elif col == 0:
             cell.set_text_props(weight="bold", ha="left")
             cell._loc = "left"  # type: ignore[attr-defined]  # no public setter for cell alignment

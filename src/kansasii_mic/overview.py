@@ -28,6 +28,42 @@ def _fmt(values: Iterable[float]) -> str:
 
 MGIT_OVERVIEW_COLUMNS = [*OVERVIEW_COLUMNS, "nr_unclassifiable"]
 
+NO_CLSI_SECTION = "No CLSI Breakpoints"
+
+# Overview table sections and row order (CLSI M. kansasii first/second line; drugs without a CLSI breakpoint last).
+OVERVIEW_SECTIONS: list[tuple[str, list[str]]] = [
+    ("First Line", ["Clarithromycin", "Rifampicin"]),
+    (
+        "Second Line",
+        [
+            "Amikacin", "Ciprofloxacin", "Doxycyclin", "Linezolid", "Minocyclin",
+            "Moxifloxacin", "Rifabutin", "Sulfamethoxazole/Trimethoprim",
+        ],
+    ),
+    (NO_CLSI_SECTION, ["Ethambutol", "Isoniazid", "Streptomycin", "Ethionamid"]),
+]
+
+
+def overview_section(antibiotic: str) -> str:
+    """Section title of an antibiotic; anything not listed (e.g. Clofazimin) goes to the no-CLSI section."""
+    for title, drugs in OVERVIEW_SECTIONS:
+        if antibiotic in drugs:
+            return title
+    return NO_CLSI_SECTION
+
+
+def _overview_rank(antibiotic: str) -> tuple[int, int]:
+    for i, (_, drugs) in enumerate(OVERVIEW_SECTIONS):
+        if antibiotic in drugs:
+            return i, drugs.index(antibiotic)
+    return len(OVERVIEW_SECTIONS) - 1, len(OVERVIEW_SECTIONS[-1][1])
+
+
+def sort_overview(df: pd.DataFrame) -> pd.DataFrame:
+    """Order overview rows by section, then by the listed drug order (unlisted drugs last, alphabetical)."""
+    order = sorted(df.index, key=lambda i: (*_overview_rank(str(df.at[i, "antibiotic"])), str(df.at[i, "antibiotic"])))
+    return df.loc[order].reset_index(drop=True)
+
 # erg is the final call (also used by the duplicate resolution and the summary).
 _CALL_COL = "erg"
 
@@ -80,7 +116,7 @@ def mgit_overview(mgit_long_df: pd.DataFrame) -> pd.DataFrame:
                 "nr_unclassifiable": len(group) - int(sum(cats.get(c, 0) for c in "SIR")),
             }
         )
-    return pd.DataFrame(rows, columns=MGIT_OVERVIEW_COLUMNS)
+    return sort_overview(pd.DataFrame(rows, columns=MGIT_OVERVIEW_COLUMNS))
 
 
 def _cutoff_columns(antibiotic: str) -> dict[str, str]:
@@ -130,7 +166,7 @@ def mhk_overview(mic_df: pd.DataFrame) -> pd.DataFrame:
                 "nr_resistant": int(cats.get("R", 0)),
             }
         )
-    return pd.DataFrame(rows, columns=OVERVIEW_COLUMNS)
+    return sort_overview(pd.DataFrame(rows, columns=OVERVIEW_COLUMNS))
 
 
 def mgit_mic_counts(mgit_long_df: pd.DataFrame) -> pd.DataFrame:

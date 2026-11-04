@@ -53,7 +53,9 @@ def _run_pipeline(long_df: pd.DataFrame, failures_df: pd.DataFrame, out_dir: Pat
         overview_df,
         f"MHK (broth microdilution) overview vs CLSI M. kansasii breakpoints / thresholds (n={clean_df['TNR'].nunique()} isolates)",
         figures_dir / "overview_table.png",
-        "CLSI M. kansasii breakpoints; INH, EMB, CFZ: single threshold (R if MIC > t). MIC point estimates (censored values at their bound; ranges at geometric mean).",
+        "First Line / Second Line: CLSI M. kansasii breakpoints (S if MIC <= S limit, R if >= R limit, I in between).\n"
+        "No CLSI Breakpoints: single threshold used here (R if MIC > t, no I category); Ethionamid and Streptomycin thresholds are not CLSI-sourced.\n"
+        "SXT classified on the trimethoprim component. MIC point estimates (censored values at their bound; ranges at geometric mean). Minocyclin: no MHK data.",
     )
 
     counts_df = mhk_mic_counts(clean_df)
@@ -105,7 +107,8 @@ def _run_mgit_pipeline(mgit_long_df: pd.DataFrame, mgit_failures_df: pd.DataFram
         overview_df,
         f"MGIT breakpoint overview (n={mgit_long_df['TNR'].nunique()} isolates)",
         figures_dir / "overview_table.png",
-        "CLSI limits (mg/L) for M. kansasii; INH, EMB, CFZ: single threshold (R if MIC > t). Only drugs with a cutoff. Isolates classified once per antibiotic from the MGIT MIC (lowest S concentration); unclassifiable = tested concentrations straddle a limit.",
+        "First Line / Second Line: CLSI M. kansasii limits (mg/L). No CLSI Breakpoints: single threshold used here (R if MIC > t, no I category). Only drugs with a cutoff.\n"
+        "Isolates classified once per antibiotic from the MGIT MIC (lowest S concentration); unclassifiable = tested concentrations straddle a limit.",
     )
 
     mic_counts_df = mgit_mic_counts(mgit_long_df)

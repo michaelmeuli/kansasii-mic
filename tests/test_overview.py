@@ -18,7 +18,7 @@ def test_mgit_overview_classifies_mic_with_clsi() -> None:
          (7, "Bedaquilin", 1.0, "R"), (7, "Bedaquilin", 4.0, "S")]  # no cutoff at all
     )
     out = mgit_overview(df).set_index("antibiotic")
-    assert list(out.index) == ["Amikacin", "Isoniazid", "Rifampicin"]
+    assert list(out.index) == ["Rifampicin", "Amikacin", "Isoniazid"]
     inh = out.loc["Isoniazid"]
     assert (inh.nr_susceptible, inh.nr_resistant, inh.nr_unclassifiable) == (1, 0, 1)
     assert (inh.susceptible_concentration, inh.intermediate_concentration, inh.resistant_concentration) == ("<= 8", "--", "> 8")
@@ -26,6 +26,22 @@ def test_mgit_overview_classifies_mic_with_clsi() -> None:
     assert (rif.nr_susceptible, rif.nr_intermediate, rif.nr_resistant) == (1, 0, 1)
     assert (ami.nr_susceptible, ami.nr_resistant, ami.nr_unclassifiable) == (1, 0, 1)
     assert rif.susceptible_concentration == "<= 1" and rif.resistant_concentration == ">= 2"
+
+
+def test_sort_overview_sections_and_order(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    from kansasii_mic.overview import overview_section, sort_overview
+    from kansasii_mic.plotting import plot_overview_table
+
+    drugs = ["Streptomycin", "Amikacin", "Rifampicin", "Clofazimin", "Ethambutol", "Clarithromycin", "Ethionamid"]
+    df = pd.DataFrame({"antibiotic": drugs, "x": range(len(drugs))})
+    assert list(sort_overview(df)["antibiotic"]) == [
+        "Clarithromycin", "Rifampicin", "Amikacin", "Ethambutol", "Streptomycin", "Ethionamid", "Clofazimin",
+    ]
+    assert [overview_section(d) for d in ("Rifampicin", "Amikacin", "Clofazimin")] == ["First Line", "Second Line", "No CLSI Breakpoints"]
+
+    mic = pd.DataFrame({"antibiotic": ["Rifampicin", "Amikacin", "Ethambutol"], "point_estimate": [0.5, 8.0, 4.0]})
+    out = plot_overview_table(mhk_overview(mic), "t", tmp_path / "o.png", "foot")
+    assert out.exists()
 
 
 def test_mhk_overview_uses_clsi_breakpoints_and_skips_others() -> None:
@@ -36,7 +52,7 @@ def test_mhk_overview_uses_clsi_breakpoints_and_skips_others() -> None:
         }
     )
     out = mhk_overview(df).set_index("antibiotic")
-    assert list(out.index) == ["Ethambutol", "Rifampicin"]  # Bedaquilin: no cutoff
+    assert list(out.index) == ["Rifampicin", "Ethambutol"]  # Bedaquilin: no cutoff; CLSI drugs first
     rif, emb = out.loc["Rifampicin"], out.loc["Ethambutol"]
     assert (rif.nr_susceptible, rif.nr_intermediate, rif.nr_resistant) == (2, 0, 1)
     assert (emb.nr_susceptible, emb.nr_resistant) == (1, 1)  # 8 == threshold is S, 16 > 8 is R

@@ -162,7 +162,9 @@ TNR/MHK matching and produce identical file layouts:
 - `outliers_per_antibiotic.csv`, `tnr_resistance_ranking.csv` -- see above.
 - `overview_table.csv`, `figures/overview_table.png` -- per-antibiotic overview: S/I/R
   concentrations (mg/L) and number of isolates susceptible/intermediate/resistant.
-  Both: CLSI breakpoint ranges. Ethambutol and isoniazid (8 mg/L, copied from `NON_CLSI_THRESHOLDS_MG_L` in
+  Rows are grouped into sections: First Line (clarithromycin, rifampicin) and Second Line (amikacin, ciprofloxacin,
+  doxycyclin, linezolid, minocyclin, moxifloxacin, rifabutin, SXT) have CLSI breakpoint ranges; No CLSI Breakpoints
+  (ethambutol, isoniazid, streptomycin, ethionamid) use one threshold. Ethambutol and isoniazid (8 mg/L, copied from `NON_CLSI_THRESHOLDS_MG_L` in
   `immensekansasii/scripts/12_generate_itol_ast.py`) and clofazimin (2 mg/L, set here only; the tree script has no
   clofazimin ring) have no CLSI breakpoint and use one threshold instead: R if MIC > threshold, S otherwise, no I
   (`NON_CLSI_THRESHOLDS_MG_L` in `breakpoints.py`). Drugs with neither are left out. MGIT isolates are classified once per drug from
