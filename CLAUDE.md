@@ -38,4 +38,5 @@ outputs. This file only lists what is easy to get wrong.
   (labels like `"Amikacin 4 mg/l"`, categorical, empty MHK). Don't mix them.
 - **`scripts/windows_notes.ps1`** is a Windows/PowerShell scratch log (uv venv, scp to the
   cluster), not a runnable script. The real entry point is `scripts/01_run_analysis.py`.
+- **Exclusions:** `drop_excluded` drops `excluded=true` isolates from `screening_map_results.csv` and the hand-kept `MANUAL_EXCLUSIONS` in `loading.py` (clean genome but 'nicht rein' in `kansasii_list_JC.xlsx`, e.g. Mkan329-186). Both MHK and MGIT use it.
 - **Paths:** `scripts/kansasii_paths.py` is a vendored copy of `kansasii-docs/templates/kansasii_paths.py` (never edit it here; `bash repos/check_sync.sh --fix`). `scripts/01_run_analysis.py` defaults its inputs to those constants; the package `src/kansasii_mic` does no path handling.

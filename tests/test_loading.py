@@ -56,6 +56,14 @@ def test_drop_excluded(tmp_path: Path) -> None:
     out, dropped = drop_excluded(df, tmp_path / "missing.csv")
     assert len(out) == 3 and dropped == []
 
+    # manual exclusion applies even when excluded=false or the results table is missing
+    res.write_text("PROBENNUMMER,excluded\nMkan329-186,false\nB,false\n")
+    df = pd.DataFrame({"PROBENNUMMER": ["Mkan329-186", "B"], "x": [1, 2]})
+    out, dropped = drop_excluded(df, res)
+    assert list(out["PROBENNUMMER"]) == ["B"] and dropped == ["Mkan329-186"]
+    out, dropped = drop_excluded(df, tmp_path / "missing.csv")
+    assert list(out["PROBENNUMMER"]) == ["B"] and dropped == ["Mkan329-186"]
+
 
 def test_drop_unclear_when_result_exists() -> None:
     from kansasii_mic.loading import drop_unclear_when_result_exists

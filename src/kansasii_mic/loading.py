@@ -360,15 +360,24 @@ def load_ast_jc_long(
     return long_df.reset_index(drop=True), failures_df
 
 
-def drop_excluded(long_df: pd.DataFrame, results_csv: Path) -> tuple[pd.DataFrame, list[str]]:
-    """Drop isolates flagged ``excluded`` in screening_map_results.csv (matched on PROBENNUMMER).
+#: Isolates excluded by hand although their genome is clean (PROBENNUMMER -> reason).
+MANUAL_EXCLUSIONS: dict[str, str] = {
+    "Mkan329-186": "TNR 2020500010 marked 'nicht rein' (contaminated culture) in kansasii_list_JC.xlsx",
+}
 
-    Returns the filtered frame and the dropped PROBENNUMMER values. A missing results table keeps everything.
+
+def drop_excluded(long_df: pd.DataFrame, results_csv: Path) -> tuple[pd.DataFrame, list[str]]:
+    """Drop isolates flagged ``excluded`` in screening_map_results.csv (matched on PROBENNUMMER)
+    plus those in :data:`MANUAL_EXCLUSIONS`.
+
+    Returns the filtered frame and the dropped PROBENNUMMER values. A missing results table only skips the
+    ``excluded`` flag; manual exclusions still apply.
     """
-    if not results_csv.exists():
-        print(f"WARNING: {results_csv} not found; excluded isolates are not removed")
-        return long_df, []
-    res = pd.read_csv(results_csv, dtype=str, usecols=["PROBENNUMMER", "excluded"])
-    bad = set(res.loc[res["excluded"].str.strip().str.lower() == "true", "PROBENNUMMER"])
+    bad = set(MANUAL_EXCLUSIONS)
+    if results_csv.exists():
+        res = pd.read_csv(results_csv, dtype=str, usecols=["PROBENNUMMER", "excluded"])
+        bad |= set(res.loc[res["excluded"].str.strip().str.lower() == "true", "PROBENNUMMER"])
+    else:
+        print(f"WARNING: {results_csv} not found; only manual exclusions are removed")
     dropped = sorted(bad & set(long_df["PROBENNUMMER"]))
     return long_df[~long_df["PROBENNUMMER"].isin(bad)].reset_index(drop=True), dropped
