@@ -108,7 +108,7 @@ def _run_mgit_pipeline(mgit_long_df: pd.DataFrame, mgit_failures_df: pd.DataFram
         f"MGIT breakpoint overview (n={mgit_long_df['TNR'].nunique()} isolates)",
         figures_dir / "overview_table.png",
         "First Line / Second Line: CLSI M. kansasii limits (mg/L). No CLSI Breakpoints: single threshold used here (R if MIC > t, no I category). Only drugs with a cutoff.\n"
-        "Isolates classified once per antibiotic from the MGIT MIC (lowest S concentration); unclassifiable = tested concentrations straddle a limit.",
+        "Isolates classified once per antibiotic from the MGIT MIC (lowest concentration called S or I); unclassifiable = tested concentrations straddle a limit.",
     )
 
     mic_counts_df = mgit_mic_counts(mgit_long_df)
@@ -116,7 +116,7 @@ def _run_mgit_pipeline(mgit_long_df: pd.DataFrame, mgit_failures_df: pd.DataFram
     plot_mgit_mic_counts(mic_counts_df, figures_dir)
     plot_mic_count_table(
         mic_counts_df,
-        f"MGIT: isolates per MIC (lowest S concentration; n={mgit_long_df['TNR'].nunique()} isolates)",
+        f"MGIT: isolates per MIC (lowest S or I concentration; n={mgit_long_df['TNR'].nunique()} isolates)",
         figures_dir / "mgit_mic_counts_per_concentration.png",
     )
 

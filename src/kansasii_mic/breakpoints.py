@@ -69,7 +69,7 @@ def categorize(antibiotic: str, point_estimate: float) -> str | None:
 def categorize_interval(antibiotic: str, lower: float, upper: float) -> str | None:
     """Classify a censored MGIT MIC lying in ``(lower, upper]`` (NaN = open end).
 
-    ``upper`` is the lowest concentration called S (NaN: no S call, MIC above the tested
+    ``upper`` is the lowest concentration called S or I (NaN: no such call, MIC above the tested
     range); ``lower`` the highest tested concentration below it (NaN: none). The next
     dilution above ``lower`` (``2 * lower``) is taken as the smallest possible MIC.
     Returns "S" / "I" / "R", or None if the interval straddles a limit/threshold or the

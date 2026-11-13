@@ -168,14 +168,14 @@ TNR/MHK matching and produce identical file layouts:
   `immensekansasii/scripts/12_generate_itol_ast.py`) and clofazimin (2 mg/L, set here only; the tree script has no
   clofazimin ring) have no CLSI breakpoint and use one threshold instead: R if MIC > threshold, S otherwise, no I
   (`NON_CLSI_THRESHOLDS_MG_L` in `breakpoints.py`). Drugs with neither are left out. MGIT isolates are classified once per drug from
-  the MGIT MIC (lowest concentration called S, using `erg`); the MIC then lies in (next lower tested concentration, that
+  the MGIT MIC (lowest concentration called S or I, using `erg`; I counts as inhibited, as in the lab workbook `20200723_NTM MGIT langsam-komplett.xlsx`; `MGIT_INHIBITED_CALLS` in `overview.py`); the MIC then lies in (next lower tested concentration, that
   concentration], and the isolate is R if `2 * lower >= R limit`, S if `upper <= S limit` (threshold drugs: R if `lower >= t`, S if `upper <= t`), I if the interval lies inside
   the I range, else counted in `nr_unclassifiable` (MGIT only). K/U calls are ignored.
   `tnr_mgit_resistance_ranking.csv` ranks by `n_R_mic` (drugs with a resistant MGIT MIC, CLSI or threshold); `pct_R_call` in
   `mgit_summary_per_antibiotic.csv` is the share of R calls at one concentration, not a resistance rate.
 - `mic_counts_per_concentration.csv`, `figures/mic_counts_per_concentration.png` (MHK) and
   `mgit_mic_counts_per_concentration.csv`, `figures/mgit_mic_counts_per_concentration.png`, `figures/<antibiotic>_mgit_mic_counts.png` (MGIT) -- isolates per MIC.
-  MGIT MIC = lowest tested concentration called S; isolates with no S call go in a `>highest` bin.
+  MGIT MIC = lowest tested concentration called S or I; isolates with no S/I call go in a `>highest` bin.
 - `figures/<antibiotic>_distribution.png`, `figures/heatmap_tnr_antibiotic.png`
   (cells normalized per drug to CLSI: S limit = 0, R limit = 1, green to red;
   drugs without a CLSI breakpoint are in a second panel colored by cohort

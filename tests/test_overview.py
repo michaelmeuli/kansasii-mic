@@ -73,6 +73,22 @@ def test_mgit_mic_counts_lowest_s_and_above_range() -> None:
     assert out == {"1": 1, "4": 1, ">4": 1}
 
 
+def test_mgit_mic_i_call_counts_as_inhibited() -> None:
+    from kansasii_mic.overview import mgit_isolate_mics, mgit_mic_counts
+
+    df = pd.DataFrame(
+        {
+            "TNR": [1, 1, 1, 2, 2],
+            "antibiotic": ["A"] * 5,
+            "concentration_mg_l": [1.0, 4.0, 20.0, 1.0, 4.0],
+            "erg": ["R", "I", "S", "R", "I"],  # 1: MIC 4 (S-only rule: 20); 2: I at the top concentration, not ">4"
+        }
+    )
+    mics = mgit_isolate_mics(df).set_index("TNR")
+    assert (mics.loc[1, "lower"], mics.loc[1, "upper"]) == (1.0, 4.0)
+    assert mgit_mic_counts(df).set_index("mic_label")["n"].to_dict() == {"1": 0, "4": 2, "20": 0, ">20": 0}
+
+
 def test_mhk_intermediate_label_matches_readme() -> None:
     from kansasii_mic.overview import _intermediate_label
 

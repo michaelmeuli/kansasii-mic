@@ -28,10 +28,10 @@ outputs. This file only lists what is easy to get wrong.
   the iTOL tree script (never edit it here; `bash repos/check_sync.sh --fix`). `breakpoints.py` holds the logic. Non-CLSI drugs
   (Ethambutol 8, Isoniazid 8, Ethionamid 0.6, Streptomycin 16, Clofazimin 2; the ETO/STR values come from the tree script and are not sourced): R if MIC > threshold, S otherwise, no I. Drugs with neither are left out of
   the overview tables (`has_cutoff`).
-- **MGIT classification:** one MIC per isolate x drug = lowest concentration called S (`erg`, not `int_erg`);
+- **MGIT classification:** one MIC per isolate x drug = lowest concentration called S or I (`MGIT_INHIBITED_CALLS` in `overview.py`; `erg`, not `int_erg`);
   the MIC lies in (lower, upper] and `categorize_interval` gives S/I/R or None (`nr_unclassifiable`). Never
   count R calls per concentration as resistance (R at a low screening concentration, e.g. Amikacin 1 or INH 0.1
-  mg/l, only means MIC above it). Isolates with no S call go in a `>c` MIC bin at their *own* highest tested
+  mg/l, only means MIC above it). Isolates with no S/I call go in a `>c` MIC bin at their *own* highest tested
   concentration.
 - **Two parallel pipelines** share the same screening-map matching:
   MHK broth-microdilution rows (numeric MIC) and MGIT breakpoint rows

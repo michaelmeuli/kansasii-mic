@@ -67,12 +67,16 @@ def sort_overview(df: pd.DataFrame) -> pd.DataFrame:
 # erg is the final call (also used by the duplicate resolution and the summary).
 _CALL_COL = "erg"
 
+# Calls counted as "no growth" when deriving the MGIT MIC. I counts as inhibited, as in the lab workbook
+# (20200723_NTM MGIT langsam-komplett.xlsx: bin = S + I); ("S",) gives the stricter S-only rule used before 2026-11-13.
+MGIT_INHIBITED_CALLS: tuple[str, ...] = ("S", "I")
+
 
 def mgit_isolate_mics(mgit_long_df: pd.DataFrame) -> pd.DataFrame:
     """One row per TNR x antibiotic with the MIC interval implied by the MGIT calls.
 
-    MIC = lowest tested concentration called S (no growth), so the true MIC lies in
-    ``(lower, upper]``: ``upper`` is that concentration (NaN if no S call, i.e. MIC
+    MIC = lowest tested concentration called S or I (``MGIT_INHIBITED_CALLS``), so the true MIC lies in
+    ``(lower, upper]``: ``upper`` is that concentration (NaN if no S/I call, i.e. MIC
     above the tested range) and ``lower`` the highest tested concentration below it
     (NaN if none). K/U calls are ignored; isolates with no S/I/R call are skipped.
     """
@@ -80,7 +84,7 @@ def mgit_isolate_mics(mgit_long_df: pd.DataFrame) -> pd.DataFrame:
     calls = mgit_long_df[mgit_long_df[_CALL_COL].isin(_SEVERITY)]
     for (tnr, antibiotic), iso in calls.groupby(["TNR", "antibiotic"]):
         conc = iso["concentration_mg_l"]
-        s = iso.loc[iso[_CALL_COL] == "S", "concentration_mg_l"]
+        s = iso.loc[iso[_CALL_COL].isin(MGIT_INHIBITED_CALLS), "concentration_mg_l"]
         upper = float(s.min()) if len(s) else float("nan")
         below = conc[conc < upper] if len(s) else conc
         lower = float(below.max()) if len(below) else float("nan")
@@ -170,9 +174,9 @@ def mhk_overview(mic_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def mgit_mic_counts(mgit_long_df: pd.DataFrame) -> pd.DataFrame:
-    """MGIT: isolates per MIC, taking MIC = lowest tested concentration called S (no growth).
+    """MGIT: isolates per MIC, taking MIC = lowest tested concentration called S or I.
 
-    Isolates with no S call but at least one I/R call are counted at
+    Isolates with no S/I call but at least one R call are counted at
     ``">" + the highest concentration tested for that isolate`` (MIC above its tested
     range; isolates not tested up to the drug's top concentration get a lower ">" bin).
     The ``">" + drug maximum`` bin is always listed. Isolates with only K/U calls are

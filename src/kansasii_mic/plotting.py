@@ -322,7 +322,7 @@ def plot_overview_table(overview_df: pd.DataFrame, title: str, out_path: Path, f
 
 
 def plot_mgit_mic_counts(mic_counts_df: pd.DataFrame, out_dir: Path) -> list[Path]:
-    """One bar chart per antibiotic: MIC (lowest S concentration) on x, isolate count on y."""
+    """One bar chart per antibiotic: MIC (lowest S or I concentration) on x, isolate count on y."""
     out_dir.mkdir(parents=True, exist_ok=True)
     paths = []
     for antibiotic_key, group in mic_counts_df.groupby("antibiotic"):
@@ -336,7 +336,7 @@ def plot_mgit_mic_counts(mic_counts_df: pd.DataFrame, out_dir: Path) -> list[Pat
             ax.set_ylim(top=max(1, group["n"].max()) * 1.35)  # headroom so the legend clears the bars
             ax.legend(
                 handles=[
-                    matplotlib.patches.Patch(color=POINT_COLOR, label="MIC = lowest concentration with no growth"),
+                    matplotlib.patches.Patch(color=POINT_COLOR, label="MIC = lowest concentration called S or I"),
                     matplotlib.patches.Patch(color=BREAKPOINT_R_COLOR, label="Growth at all concentrations tested for that isolate (MIC > highest tested)"),
                 ],
                 loc="upper right",
@@ -345,7 +345,7 @@ def plot_mgit_mic_counts(mic_counts_df: pd.DataFrame, out_dir: Path) -> list[Pat
             )
         ax.set_xticks(x)
         ax.set_xticklabels(group["mic_label"])
-        ax.set_xlabel("MIC (mg/L) = lowest concentration with no growth (S)")
+        ax.set_xlabel("MIC (mg/L) = lowest concentration called S or I")
         ax.set_ylabel("Isolates (n)")
         ax.set_title(f"{antibiotic} -- MGIT MIC distribution (n={int(group['n'].sum())})")
         fig.tight_layout()

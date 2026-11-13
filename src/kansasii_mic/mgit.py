@@ -42,7 +42,7 @@ def mgit_summary(mgit_long_df: pd.DataFrame) -> pd.DataFrame:
 def tnr_mgit_resistance_ranking(mgit_long_df: pd.DataFrame) -> pd.DataFrame:
     """Per-TNR count of each ERG category across all antibiotics/concentrations tested.
 
-    ``n_R_mic`` is the number of drugs for which the isolate's MGIT MIC (lowest S
+    ``n_R_mic`` is the number of drugs for which the isolate's MGIT MIC (lowest S or I
     concentration) is resistant per CLSI breakpoint or non-CLSI threshold (see
     ``categorize_interval``; drugs without either never count). Ranked by ``n_R_mic``, then raw ``n_R``, most first.
     """
