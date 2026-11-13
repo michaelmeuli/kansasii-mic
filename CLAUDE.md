@@ -6,16 +6,15 @@ outputs. This file only lists what is easy to get wrong.
 - **Git:** commit and push directly to `main` (remote `origin`,
   `git@github.com:michaelmeuli/kansasii-mic.git`). No feature branches or PRs.
 - **Environment:** the system `python3` has no pandas. Use
-  `module load miniforge3` and `conda activate env_mic` (renamed from `kansasii_mic` 2026-10-25 to match the other repos; the old env can be deleted). Run tests with
+  `module load miniforge3` and `conda activate env_mic`. Run tests with
   `pytest tests/`. Set `MPLBACKEND=Agg` when running headless.
 - **Screening map is `data/imm/screening_map_link.csv`** (built by
-  `immensekansasii/scripts/02_screening_map_link.py`); the old `screening_map.csv`
-  is superseded. A `mic.csv` TNR matches any of `SCREENING_MAP_TNR_COLUMNS`
+  `immensekansasii/scripts/02_screening_map_link.py`), not `screening_map.csv`. A `mic.csv` TNR matches any of `SCREENING_MAP_TNR_COLUMNS`
   (`TNR`, `TNR_JC`, `TNR_MM`, `TNR3`-`TNR6`), then the map's `MHK` column. The output
   `TNR` is always the isolate's primary `TNR`. The map's `MHK` column is
   unrelated to `mic.csv`'s `MHK` (the MIC reading). `MHK_TNR_DIFFERS = yes`
   in the map (MHK made under another TNR than the sequenced one) is informational
-  only: such rows are still matched via the `MHK` column.
+  only: such rows are matched via the `MHK` column like any other.
 - **`--ast-jc`** (`screening_map_ast_jc.csv`, wide jc MIC table, loader `load_ast_jc_long`): adds MHK-panel rows
   for isolates without mic.csv panel data only (`source` column); values snapped to the dilution series
   (`snap_ast_jc_value`). Linked via `TNR_JC`; flag `MIC_JC` in the link table.

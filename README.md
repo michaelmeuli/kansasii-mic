@@ -15,7 +15,7 @@ and overall, with results checked against CLSI reference breakpoints for
   a fixed test concentration (e.g. `"Amikacin 4 mg/l"`) are single-point
   breakpoint tests and never carry an `MHK` value -- **this analysis only
   uses rows with a non-empty `MHK`**, per the intended scope.
-- `data/imm/screening_map_link.csv` (supersedes `screening_map.csv`; built by `immensekansasii/scripts/02_screening_map_link.py`) -- links `TNR` to sample/sequencing IDs and
+- `data/imm/screening_map_link.csv` (built by `immensekansasii/scripts/02_screening_map_link.py`) -- links `TNR` to sample/sequencing IDs and
   marks reference/control-strain rows (`LABEL`), including
   `M. kansasii (ATCC 12478)`. That control row has no `TNR`/MIC data of
   its own in this export, so it cannot serve as an in-dataset QC
@@ -58,6 +58,7 @@ number from screening_map). `NR`/`TNR`/`MHK` are nullable integers.
   within one `TNR`, in original file order, sharing an identical MIC point
   estimate is flagged and excluded from the main analysis (written to
   `excluded_qc.csv` with a reason) rather than hardcoding that one `TNR`.
+  `2021311033` is not in the screening map, so `excluded_qc.csv` is currently empty.
 
 ## Point-estimate conventions
 
@@ -111,8 +112,8 @@ consistent with this dataset's own `INT_ERG`/`ERG` marking those drugs
   was tested for, plus counts of CLSI-resistant results -- used to rank
   overall "most resistant" / "most susceptible" isolates.
 
-Every antibiotic in the current `mhk/` analysis has MIC data for 77-78 of the 78 usable isolates (41 from mic.csv, 37 only from the jc table;
-Ethionamid 77, the rest 78). If an antibiotic is tested rarely -- Tukey
+Every antibiotic in the current `mhk/` analysis has MIC data for 76-77 of the 77 usable isolates (41 from mic.csv, 36 only from the jc table;
+Ethionamid 76, the rest 77). If an antibiotic is tested rarely -- Tukey
 fences on a few points are uninformative -- treat outlier flags (or
 their absence) for low-n antibiotics with caution; check
 `n_antibiotics_tested`-style counts in the per-antibiotic figures/titles
@@ -129,7 +130,7 @@ conda activate env_mic
 pytest tests/
 
 python scripts/01_run_analysis.py   # all four paths default to the shared constants:
-#   --mic-csv MIC_CSV  --screening-map SCREENING_MAP_LINK  --ast-jc SCREENING_MAP_AST_JC  --out-dir OUTPUT_ROOT/mic
+#   --mic-csv MIC_CSV  --screening-map SCREENING_MAP_LINK  --ast-jc SCREENING_MAP_AST_JC  --out-dir OUT_MIC/results
 #   (data/imm/*.csv and output/kansasii-mic/results); --no-ast-jc leaves the jc table out
 sbatch submit_mic.sbatch            # tests, then the analysis, then MANIFEST.txt in output/kansasii-mic/results (what run_downstream.sh submits)
 ```
@@ -164,10 +165,9 @@ TNR/MHK matching and produce identical file layouts:
   concentrations (mg/L) and number of isolates susceptible/intermediate/resistant.
   Rows are grouped into sections: First Line (clarithromycin, rifampicin) and Second Line (amikacin, ciprofloxacin,
   doxycyclin, linezolid, minocyclin, moxifloxacin, rifabutin, SXT) have CLSI breakpoint ranges; No CLSI Breakpoints
-  (ethambutol, isoniazid, streptomycin, ethionamid) use one threshold. Ethambutol and isoniazid (8 mg/L, copied from `NON_CLSI_THRESHOLDS_MG_L` in
-  `immensekansasii/scripts/12_generate_itol_ast.py`) and clofazimin (2 mg/L, set here only; the tree script has no
-  clofazimin ring) have no CLSI breakpoint and use one threshold instead: R if MIC > threshold, S otherwise, no I
-  (`NON_CLSI_THRESHOLDS_MG_L` in `breakpoints.py`). Drugs with neither are left out. MGIT isolates are classified once per drug from
+  (ethambutol, isoniazid, streptomycin, ethionamid; clofazimin in MGIT) use one threshold: R if MIC > threshold, S otherwise, no I
+  (`NON_CLSI_THRESHOLDS_MG_L` in `kansasii_cutoffs.py`, shared with `immensekansasii/scripts/12_generate_itol_ast.py`: ethambutol 8, isoniazid 8,
+  ethionamid 0.6, streptomycin 16, clofazimin 2 mg/L). Drugs with neither are left out. MGIT isolates are classified once per drug from
   the MGIT MIC (lowest concentration called S or I, using `erg`; I counts as inhibited, as in the lab workbook `20200723_NTM MGIT langsam-komplett.xlsx`; `MGIT_INHIBITED_CALLS` in `overview.py`); the MIC then lies in (next lower tested concentration, that
   concentration], and the isolate is R if `2 * lower >= R limit`, S if `upper <= S limit` (threshold drugs: R if `lower >= t`, S if `upper <= t`), I if the interval lies inside
   the I range, else counted in `nr_unclassifiable` (MGIT only). K/U calls are ignored.
@@ -183,22 +183,8 @@ TNR/MHK matching and produce identical file layouts:
 
 ## Pipeline runs (immensekansasii)
 
-Start every run of the immensekansasii (IMMense) pipeline in its own
-subdirectory of `/shares/sander.imm.uzh/MM/kansasii/runs/`, not in `output/`.
-Nextflow writes its `work/` directory into the directory the run is started
-from. `work/` is large and only temporary, so it must not end up in
-`output/`, which gets downloaded to local `kansasii_C`. Once a run has
-finished and been checked, copy its end results to
-`/shares/sander.imm.uzh/MM/kansasii/output/<run_name>/` and delete `work/`.
-
-```bash
-mkdir -p /shares/sander.imm.uzh/MM/kansasii/runs/<run_name>
-cd /shares/sander.imm.uzh/MM/kansasii/runs/<run_name>
-bash /shares/sander.imm.uzh/MM/kansasii/repos/immensekansasii/run_IMMENSE.sh -j <job_name> -t <input_type> -r <run_name> -i <input_dir>
-
-# after the run: collect results (without work/) in output/
-rsync -a --exclude work --exclude .nextflow /shares/sander.imm.uzh/MM/kansasii/runs/<run_name>/ /shares/sander.imm.uzh/MM/kansasii/output/<run_name>/
-```
+Pipeline runs are started in their own subdirectory of `/shares/sander.imm.uzh/MM/kansasii/runs/`, never in `output/`
+(Nextflow writes its large `work/` directory where the run is started). Commands: `kansasii-docs/docs/WORKFLOW.md`, section 2.
 
 ## Windows checkout
 
