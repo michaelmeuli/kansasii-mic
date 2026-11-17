@@ -194,6 +194,8 @@ def drop_unclear_when_result_exists(mgit_long_df: pd.DataFrame) -> pd.DataFrame:
 
 # Every screening_map_link.csv column holding a TNR of the row's isolate:
 # TNR is the primary one, the others are further samples of the same isolate.
+# Same tuple as TNR_COLUMNS in kansasii_paths (vendored only in scripts/, not importable from the package);
+# tests/test_shared_constants.py fails when the two differ.
 SCREENING_MAP_TNR_COLUMNS = ("TNR", "TNR_JC", "TNR_MM", "TNR3", "TNR4", "TNR5", "TNR6")
 
 
